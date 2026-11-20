@@ -1,0 +1,2351 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Novelia Studio — Gestionale Produzione 3D</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,500&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        serif: ['Cormorant Garamond', 'serif'],
+                    },
+                    colors: {
+                        novelia: {
+                            50: '#faf9f6',
+                            100: '#f3efe8',
+                            200: '#e6dfd3',
+                            300: '#d4c8b4',
+                            400: '#bca98e',
+                            500: '#a38b6d',
+                            600: '#8a7256',
+                            700: '#725c45',
+                            800: '#5e4c3a',
+                            900: '#4e4032',
+                            navy: '#081B4B',
+                            purple: '#6B0FB3',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            background-color: #faf9f6;
+            color: #1c1917;
+        }
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #d6d3d1;
+            border-radius: 9999px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #a8a29e;
+        }
+    </style>
+</head>
+<body class="antialiased selection:bg-novelia-200 selection:text-stone-900">
+
+    <!-- Schermata di Accesso Novelia Studio -->
+    <div id="auth-gate" class="fixed inset-0 z-50 bg-[#faf9f6] flex items-center justify-center p-4">
+        <div class="bg-white rounded-3xl border border-stone-200/90 shadow-xl w-full max-w-md p-8 text-center">
+            <div class="w-24 h-24 mx-auto rounded-full bg-white shadow-md border-2 border-[#6B0FB3] flex items-center justify-center p-1 mb-4">
+                <svg viewBox="0 0 120 120" class="w-full h-full">
+                    <circle cx="60" cy="60" r="56" fill="none" stroke="#6B0FB3" stroke-width="2.2"/>
+                    <path d="M60 22 L62.5 31 L71 33.5 L62.5 36 L60 45 L57.5 36 L49 33.5 L57.5 31 Z" fill="#6B0FB3"/>
+                    <circle cx="16" cy="60" r="2.8" fill="#6B0FB3"/>
+                    <circle cx="104" cy="60" r="2.8" fill="#6B0FB3"/>
+                    <text x="60" y="75" text-anchor="middle" font-family="Cormorant Garamond, serif" font-weight="700" font-size="48" fill="#081B4B">N</text>
+                    <path d="M60 72 C53 62, 42 66, 47 76 C51 83, 60 88, 60 88 C60 88, 69 83, 73 76 C78 66, 67 62, 60 72 Z" fill="none" stroke="#6B0FB3" stroke-width="2.5"/>
+                    <path d="M26 92 Q33 82 37 70 M32 82 L25 78 M34 76 L41 72" fill="none" stroke="#6B0FB3" stroke-width="1.8" stroke-linecap="round"/>
+                </svg>
+            </div>
+            <h1 class="font-serif text-3xl font-bold text-[#081B4B] tracking-wide">NOVELIA STUDIO</h1>
+            <p class="text-xs uppercase tracking-[0.22em] text-[#6B0FB3] font-semibold mt-1">Accesso Gestionale Riservato</p>
+            <p class="text-xs text-stone-500 mt-3">Inserisci il PIN aziendale per accedere agli ordini, al magazzino e alle finanze sincronizzate su tutti i tuoi dispositivi.</p>
+
+            <form onsubmit="handlePinUnlock(event)" class="mt-6 space-y-4">
+                <div>
+                    <input type="password" id="auth-pin-input" maxlength="12" required placeholder="Inserisci PIN (default: 2026)"
+                        class="w-full px-4 py-3 rounded-xl border border-stone-300 text-center text-lg tracking-[0.3em] font-bold text-[#081B4B] focus:outline-none focus:ring-2 focus:ring-[#6B0FB3]/30 focus:border-[#6B0FB3]">
+                    <p id="auth-error-msg" class="text-xs text-rose-600 font-medium mt-2 hidden">PIN non corretto. Riprova.</p>
+                </div>
+                <button type="submit" class="w-full py-3 rounded-xl bg-[#081B4B] text-white text-sm font-semibold hover:bg-[#0c276b] transition-colors shadow-sm">
+                    Entra nel Gestionale
+                </button>
+            </form>
+
+            <div class="mt-5 pt-4 border-t border-stone-100 flex items-center justify-between text-[11px] text-stone-400">
+                <span id="auth-cloud-badge" class="flex items-center gap-1.5">
+                    <span class="w-2 h-2 rounded-full bg-amber-400 animate-pulse"></span> Modalità Locale
+                </span>
+                <div class="flex items-center gap-3">
+                    <button type="button" onclick="openCloudConfigModal()" class="text-[#081B4B] hover:underline font-medium">Collega Cloud</button>
+                    <button type="button" onclick="toggleChangePinBox()" class="text-[#6B0FB3] hover:underline font-medium">Cambia PIN</button>
+                </div>
+            </div>
+
+            <div id="change-pin-box" class="hidden mt-4 p-3.5 rounded-xl bg-stone-50 border border-stone-200 text-left space-y-2.5">
+                <p class="text-xs font-semibold text-stone-700">Imposta Nuovo PIN Aziendale</p>
+                <input type="password" id="old-pin-input" placeholder="PIN attuale" class="w-full px-3 py-1.5 rounded-lg border border-stone-200 text-xs">
+                <input type="password" id="new-pin-input" placeholder="Nuovo PIN (min. 4 caratteri)" class="w-full px-3 py-1.5 rounded-lg border border-stone-200 text-xs">
+                <button type="button" onclick="saveNewPin()" class="w-full py-1.5 rounded-lg bg-[#6B0FB3] text-white text-xs font-medium hover:bg-[#580c94]">
+                    Salva Nuovo PIN
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notification Container -->
+    <div id="toast-container" class="fixed bottom-4 right-4 z-50 flex flex-col gap-2 pointer-events-none"></div>
+
+    <!-- Layout Principale -->
+    <div class="min-h-screen flex flex-col lg:flex-row">
+
+        <!-- Sidebar Desktop & Header Mobile -->
+        <aside class="bg-white border-b lg:border-b-0 lg:border-r border-stone-200/80 lg:w-64 lg:flex-shrink-0 flex flex-col justify-between sticky top-0 z-30">
+            <div>
+                <!-- Brand Header con Logo Circolare Novelia Studio -->
+                <div class="px-5 py-4 flex items-center justify-between border-b border-stone-100">
+                    <div class="flex items-center gap-3">
+                        <div class="w-11 h-11 rounded-full bg-white shadow-sm border border-[#6B0FB3]/30 flex items-center justify-center flex-shrink-0 overflow-hidden p-0.5">
+                            <svg viewBox="0 0 120 120" class="w-full h-full">
+                                <circle cx="60" cy="60" r="56" fill="none" stroke="#6B0FB3" stroke-width="2.5"/>
+                                <path d="M60 22 L62.5 31 L71 33.5 L62.5 36 L60 45 L57.5 36 L49 33.5 L57.5 31 Z" fill="#6B0FB3"/>
+                                <circle cx="16" cy="60" r="3" fill="#6B0FB3"/>
+                                <circle cx="104" cy="60" r="3" fill="#6B0FB3"/>
+                                <text x="60" y="75" text-anchor="middle" font-family="Cormorant Garamond, serif" font-weight="700" font-size="48" fill="#081B4B">N</text>
+                                <path d="M60 72 C53 62, 42 66, 47 76 C51 83, 60 88, 60 88 C60 88, 69 83, 73 76 C78 66, 67 62, 60 72 Z" fill="none" stroke="#6B0FB3" stroke-width="2.5"/>
+                                <path d="M26 92 Q33 82 37 70 M32 82 L25 78 M34 76 L41 72" fill="none" stroke="#6B0FB3" stroke-width="2" stroke-linecap="round"/>
+                            </svg>
+                        </div>
+                        <div>
+                            <h1 class="font-serif text-xl font-bold tracking-wide text-[#081B4B] leading-none">NOVELIA</h1>
+                            <p class="text-[10px] uppercase tracking-[0.2em] text-[#6B0FB3] font-semibold mt-0.5">Studio • Gestionale</p>
+                        </div>
+                    </div>
+                    <!-- Mobile Menu Toggle -->
+                    <button id="mobile-menu-btn" onclick="toggleMobileMenu()" class="lg:hidden p-2 rounded-xl text-stone-600 hover:bg-stone-100 focus:outline-none">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
+                        </svg>
+                    </button>
+                </div>
+
+                <!-- Navigation Links -->
+                <nav id="sidebar-nav" class="hidden lg:flex flex-col gap-1.5 p-4">
+                    <button onclick="switchTab('dashboard')" data-tab="dashboard" class="nav-btn active flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all bg-[#081B4B] text-white shadow-sm">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M4 5a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1H5a1 1 0 01-1-1V5zm10 0a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1h-4a1 1 0 01-1-1V5zM4 15a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1H5a1 1 0 01-1-1v-4zm10 0a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1h-4a1 1 0 01-1-1v-4z"></path></svg>
+                        Dashboard
+                    </button>
+                    <button onclick="switchTab('orders')" data-tab="orders" class="nav-btn flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-stone-600 hover:bg-stone-100 hover:text-stone-900 transition-all">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"></path></svg>
+                        Ordini & Produzione
+                    </button>
+                    <button onclick="switchTab('inventory')" data-tab="inventory" class="nav-btn flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-stone-600 hover:bg-stone-100 hover:text-stone-900 transition-all">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path></svg>
+                        Magazzino & Catalogo
+                    </button>
+                    <button onclick="switchTab('finance')" data-tab="finance" class="nav-btn flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-stone-600 hover:bg-stone-100 hover:text-stone-900 transition-all">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                        Finanze & Profitti
+                    </button>
+                </nav>
+            </div>
+
+            <!-- Stato Sincronizzazione Cloud & Backup Footer -->
+            <div class="hidden lg:block p-4 border-t border-stone-100 space-y-2">
+                <div class="px-3 py-2 rounded-xl bg-stone-50 border border-stone-200/80 flex items-center justify-between">
+                    <div class="flex items-center gap-2 min-w-0">
+                        <span id="sidebar-sync-dot" class="w-2 h-2 rounded-full bg-amber-400 flex-shrink-0"></span>
+                        <span id="sidebar-sync-text" class="text-[11px] font-medium text-stone-600 truncate">Solo Locale</span>
+                    </div>
+                    <div class="flex items-center gap-2 flex-shrink-0">
+                        <button onclick="openCloudConfigModal()" class="text-[11px] text-[#081B4B] hover:underline font-medium" title="Configura sincronizzazione Supabase">Cloud</button>
+                        <button onclick="lockApp()" class="text-[11px] text-[#6B0FB3] hover:underline font-medium" title="Blocca schermata">Blocca</button>
+                    </div>
+                </div>
+                <p class="text-[11px] font-medium text-stone-400 uppercase tracking-wider px-1 pt-1">Backup & Esportazione</p>
+                <div class="grid grid-cols-2 gap-2">
+                    <button onclick="exportDataJSON()" class="flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl border border-stone-200 text-xs font-medium text-stone-700 hover:bg-stone-50 transition-colors" title="Scarica backup completo JSON">
+                        <span>💾</span> Salva JSON
+                    </button>
+                    <label class="flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl border border-stone-200 text-xs font-medium text-stone-700 hover:bg-stone-50 transition-colors cursor-pointer" title="Ripristina da file JSON">
+                        <span>📂</span> Carica
+                        <input type="file" accept=".json" onchange="importDataJSON(event)" class="hidden">
+                    </label>
+                </div>
+                <button onclick="exportOrdersCSV()" class="w-full flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl bg-stone-100 text-xs font-medium text-stone-700 hover:bg-stone-200/70 transition-colors">
+                    <span>📊</span> Esporta Ordini (CSV)
+                </button>
+            </div>
+        </aside>
+
+        <!-- Area Contenuto Principale -->
+        <main class="flex-1 p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto w-full">
+
+            <!-- ================= TAB 1: DASHBOARD ================= -->
+            <section id="tab-dashboard" class="tab-section space-y-6">
+                <!-- Banner Ufficiale Novelia Studio -->
+                <div class="bg-white rounded-3xl border border-stone-200/80 shadow-sm px-6 py-5 relative overflow-hidden">
+                    <div class="flex flex-col md:flex-row items-center justify-between gap-4">
+                        <div class="flex flex-col items-center md:items-start text-center md:text-left">
+                            <div class="flex items-center gap-2 mb-1">
+                                <svg viewBox="0 0 80 45" class="w-12 h-7">
+                                    <path d="M35 38 Q22 25 18 10 M27 28 L17 24 M23 20 L33 15" fill="none" stroke="#6B0FB3" stroke-width="2" stroke-linecap="round"/>
+                                    <path d="M52 16 L54 22 L60 24 L54 26 L52 32 L50 26 L44 24 L50 22 Z" fill="#6B0FB3"/>
+                                    <path d="M32 10 A 18 18 0 0 1 65 25" fill="none" stroke="#6B0FB3" stroke-width="2" stroke-linecap="round"/>
+                                </svg>
+                                <span class="text-[11px] uppercase tracking-[0.25em] text-[#6B0FB3] font-semibold">Atelier Stampa 3D</span>
+                            </div>
+                            <h2 class="font-serif text-3xl sm:text-4xl font-bold tracking-[0.12em] text-[#081B4B] leading-none">
+                                NOVELIA <span class="text-[#6B0FB3] font-normal text-xl sm:text-2xl tracking-[0.28em]">STUDIO</span>
+                            </h2>
+                            <p class="font-serif italic text-base sm:text-lg text-[#081B4B]/80 mt-1.5">
+                                “Ogni storia merita di essere ricordata.”
+                            </p>
+                        </div>
+                        <div class="flex flex-wrap items-center justify-center gap-2.5">
+                            <button onclick="openOrderModal()" class="px-4 py-2.5 rounded-xl bg-[#081B4B] text-white text-sm font-medium hover:bg-[#0c276b] transition-colors shadow-sm flex items-center gap-2">
+                                <span>+</span> Nuovo Ordine
+                            </button>
+                            <button onclick="openExpenseModal()" class="px-4 py-2.5 rounded-xl bg-white border border-[#6B0FB3]/30 text-[#6B0FB3] text-sm font-medium hover:bg-purple-50/50 transition-colors flex items-center gap-2">
+                                <span>+</span> Registra Spesa
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- KPI Cards -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
+                    <div class="bg-white p-5 rounded-2xl border border-stone-200/80 shadow-sm">
+                        <div class="flex items-center justify-between">
+                            <span class="text-xs font-medium text-stone-500 uppercase tracking-wider">Totale in Cassa (Mese)</span>
+                            <span class="w-8 h-8 rounded-lg bg-indigo-50 text-[#081B4B] flex items-center justify-center text-sm font-bold">€</span>
+                        </div>
+                        <p id="kpi-revenue" class="text-2xl font-bold text-[#081B4B] mt-2">€ 0,00</p>
+                        <p class="text-xs text-stone-400 mt-1">Ordini pagati - Costi diretti</p>
+                    </div>
+
+                    <div class="bg-white p-5 rounded-2xl border border-stone-200/80 shadow-sm">
+                        <div class="flex items-center justify-between">
+                            <span class="text-xs font-medium text-stone-500 uppercase tracking-wider">Costi Produzione (Mese)</span>
+                            <span class="w-8 h-8 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center text-sm font-bold">⚙</span>
+                        </div>
+                        <p id="kpi-expenses" class="text-2xl font-bold text-stone-900 mt-2">€ 0,00</p>
+                        <p class="text-xs text-stone-400 mt-1">Materiale + Stampa + Extra</p>
+                    </div>
+
+                    <div class="bg-white p-5 rounded-2xl border border-stone-200/80 shadow-sm">
+                        <div class="flex items-center justify-between">
+                            <span class="text-xs font-medium text-stone-500 uppercase tracking-wider">Profitto Ordini (Mese)</span>
+                            <span class="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-700 flex items-center justify-center text-sm font-bold">✦</span>
+                        </div>
+                        <p id="kpi-profit" class="text-2xl font-bold text-emerald-700 mt-2">€ 0,00</p>
+                        <p class="text-xs text-stone-400 mt-1">Tutti gli ordini - Costi diretti</p>
+                    </div>
+
+                    <div class="bg-white p-5 rounded-2xl border border-stone-200/80 shadow-sm">
+                        <div class="flex items-center justify-between">
+                            <span class="text-xs font-medium text-stone-500 uppercase tracking-wider">Ordini in Lavorazione</span>
+                            <span class="w-8 h-8 rounded-lg bg-purple-50 text-[#6B0FB3] flex items-center justify-center text-sm font-bold">⧗</span>
+                        </div>
+                        <p id="kpi-active-orders" class="text-2xl font-bold text-stone-900 mt-2">0</p>
+                        <p class="text-xs text-stone-400 mt-1">Da stampare o in finitura</p>
+                    </div>
+                </div>
+
+                <!-- Grafico Andamento + Avvisi Magazzino -->
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <!-- Grafico Entrate vs Uscite -->
+                    <div class="lg:col-span-2 bg-white p-6 rounded-2xl border border-stone-200/80 shadow-sm">
+                        <div class="flex items-center justify-between mb-4">
+                            <div>
+                                <h3 class="font-semibold text-stone-900">Andamento Finanziario (Ultimi 6 Mesi)</h3>
+                                <p class="text-xs text-stone-500">Confronto tra ricavi incassati e costi diretti di produzione</p>
+                            </div>
+                            <div class="flex items-center gap-4 text-xs">
+                                <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-emerald-600"></span> Incassi Ordini</span>
+                                <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-amber-500"></span> Costi Produzione</span>
+                            </div>
+                        </div>
+                        <div id="finance-chart-container" class="w-full h-64 flex items-end justify-between pt-6"></div>
+                    </div>
+
+                    <!-- Avvisi Scorte Filamenti -->
+                    <div class="bg-white p-6 rounded-2xl border border-stone-200/80 shadow-sm flex flex-col justify-between">
+                        <div>
+                            <div class="flex items-center justify-between mb-4">
+                                <h3 class="font-semibold text-stone-900">Allerta Filamenti</h3>
+                                <span id="low-stock-badge" class="px-2.5 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-800">0 sotto soglia</span>
+                            </div>
+                            <p class="text-xs text-stone-500 mb-4">Bobine con meno di 200g residui da riordinare.</p>
+                            <div id="low-stock-list" class="space-y-3 max-h-56 overflow-y-auto pr-1"></div>
+                        </div>
+                        <button onclick="switchTab('inventory')" class="mt-4 w-full py-2.5 rounded-xl border border-stone-200 text-xs font-medium text-stone-700 hover:bg-stone-50 transition-colors">
+                            Gestisci Tutte le Bobine →
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Prossimi Ordini in Consegna -->
+                <div class="bg-white p-6 rounded-2xl border border-stone-200/80 shadow-sm">
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="font-semibold text-stone-900">Prossime Consegne & Code di Stampa</h3>
+                        <button onclick="switchTab('orders')" class="text-xs font-medium text-novelia-700 hover:underline">Vedi tutti gli ordini →</button>
+                    </div>
+                    <div id="dashboard-upcoming-orders" class="divide-y divide-stone-100"></div>
+                </div>
+            </section>
+
+            <!-- ================= TAB 2: ORDINI & PRODUZIONE ================= -->
+            <section id="tab-orders" class="tab-section hidden space-y-6">
+                <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                    <div>
+                        <h2 class="font-serif text-3xl font-semibold text-stone-900">Ordini & Produzione</h2>
+                        <p class="text-sm text-stone-500 mt-0.5">Gestisci commesse, costi di stampa/materiale, margini e scalatura automatica dal magazzino.</p>
+                    </div>
+                    <button onclick="openOrderModal()" class="px-4 py-2.5 rounded-xl bg-stone-900 text-white text-sm font-medium hover:bg-stone-800 transition-colors shadow-sm self-start sm:self-auto">
+                        + Crea Nuovo Ordine
+                    </button>
+                </div>
+
+                <!-- Filtri e Ricerca -->
+                <div class="bg-white p-4 rounded-2xl border border-stone-200/80 shadow-sm flex flex-col lg:flex-row gap-3">
+                    <div class="flex-1 relative">
+                        <input type="text" id="order-search" oninput="renderOrders()" placeholder="Cerca cliente, prodotto o nota..." class="w-full pl-9 pr-4 py-2 rounded-xl border border-stone-200 text-sm focus:outline-none focus:ring-2 focus:ring-novelia-400">
+                        <svg class="w-4 h-4 text-stone-400 absolute left-3 top-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                    </div>
+                    <div class="flex flex-wrap items-center gap-2">
+                        <select id="order-status-filter" onchange="renderOrders()" class="px-3.5 py-2 rounded-xl border border-stone-200 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-novelia-400">
+                            <option value="ALL">Tutti gli stati</option>
+                            <option value="Da stampare">Da stampare</option>
+                            <option value="In stampa">In stampa</option>
+                            <option value="Finitura">Finitura / Confezione</option>
+                            <option value="Consegnato">Consegnato</option>
+                            <option value="Pagato">Pagato</option>
+                        </select>
+                        <div class="flex items-center gap-1.5 bg-stone-50 px-3 py-1.5 rounded-xl border border-stone-200">
+                            <span class="text-xs font-medium text-stone-500">Mese:</span>
+                            <input type="month" id="order-month-filter" onchange="renderOrders()" class="text-sm bg-transparent text-stone-800 focus:outline-none">
+                            <button type="button" onclick="resetOrderMonthFilter()" title="Mostra tutti i mesi" class="text-xs text-stone-400 hover:text-stone-700 px-1">✕</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Barra Riepilogo Periodo Selezionato (Ordini) -->
+                <div id="orders-period-summary" class="grid grid-cols-2 sm:grid-cols-5 gap-3 bg-white p-4 rounded-2xl border border-stone-200/80 shadow-sm">
+                    <div>
+                        <p class="text-[11px] uppercase tracking-wider text-stone-400 font-medium">Ordini Periodo</p>
+                        <p id="ord-sum-count" class="text-lg font-bold text-stone-900 mt-0.5">0</p>
+                    </div>
+                    <div>
+                        <p class="text-[11px] uppercase tracking-wider text-stone-400 font-medium">Ore Stampa Totali</p>
+                        <p id="ord-sum-time" class="text-lg font-bold text-stone-700 mt-0.5">0h 0m</p>
+                    </div>
+                    <div>
+                        <p class="text-[11px] uppercase tracking-wider text-stone-400 font-medium">Valore Ordini</p>
+                        <p id="ord-sum-revenue" class="text-lg font-bold text-stone-900 mt-0.5">€ 0,00</p>
+                    </div>
+                    <div>
+                        <p class="text-[11px] uppercase tracking-wider text-stone-400 font-medium">Costi Produzione</p>
+                        <p id="ord-sum-cost" class="text-lg font-bold text-rose-700 mt-0.5">€ 0,00</p>
+                    </div>
+                    <div class="col-span-2 sm:col-span-1">
+                        <p class="text-[11px] uppercase tracking-wider text-stone-400 font-medium">Profitto Netto</p>
+                        <p id="ord-sum-profit" class="text-lg font-bold text-emerald-700 mt-0.5">€ 0,00</p>
+                    </div>
+                </div>
+
+                <!-- Tabella Ordini -->
+                <div class="bg-white rounded-2xl border border-stone-200/80 shadow-sm overflow-hidden">
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left border-collapse">
+                            <thead>
+                                <tr class="bg-stone-50/80 border-b border-stone-200/80 text-[11px] uppercase tracking-wider text-stone-500 font-semibold">
+                                    <th class="py-3.5 px-4">Cliente & Canale</th>
+                                    <th class="py-3.5 px-4">Prodotto & Filamento</th>
+                                    <th class="py-3.5 px-4">Stampa & Peso</th>
+                                    <th class="py-3.5 px-4">Stato</th>
+                                    <th class="py-3.5 px-4 text-right">Prezzo Cliente</th>
+                                    <th class="py-3.5 px-4 text-right">Costi Prod.</th>
+                                    <th class="py-3.5 px-4 text-right">Profitto</th>
+                                    <th class="py-3.5 px-4 text-right">Azioni</th>
+                                </tr>
+                            </thead>
+                            <tbody id="orders-table-body" class="divide-y divide-stone-100 text-sm"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ================= TAB 3: MAGAZZINO & CATALOGO ================= -->
+            <section id="tab-inventory" class="tab-section hidden space-y-6">
+                <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                    <div>
+                        <h2 class="font-serif text-3xl font-semibold text-stone-900">Magazzino & Catalogo</h2>
+                        <p class="text-sm text-stone-500 mt-0.5">Monitora i grammi residui dei tuoi filamenti e gestisci le schede tecniche dei modelli base.</p>
+                    </div>
+                    <div class="flex gap-2">
+                        <button onclick="openSpoolModal()" class="px-4 py-2.5 rounded-xl bg-stone-900 text-white text-sm font-medium hover:bg-stone-800 transition-colors shadow-sm">
+                            + Aggiungi Bobina
+                        </button>
+                        <button onclick="openProductModal()" class="px-4 py-2.5 rounded-xl bg-white border border-stone-200 text-stone-700 text-sm font-medium hover:bg-stone-50 transition-colors">
+                            + Nuovo Modello
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Sotto-tabs Magazzino -->
+                <div class="flex gap-2 border-b border-stone-200 pb-2">
+                    <button onclick="switchInventorySubTab('spools')" id="subtab-spools-btn" class="px-4 py-2 rounded-xl text-sm font-medium bg-stone-900 text-white">
+                        Bobine Filamento (<span id="spools-count">0</span>)
+                    </button>
+                    <button onclick="switchInventorySubTab('catalog')" id="subtab-catalog-btn" class="px-4 py-2 rounded-xl text-sm font-medium text-stone-600 hover:bg-stone-100">
+                        Catalogo Modelli Base (<span id="catalog-count">0</span>)
+                    </button>
+                </div>
+
+                <!-- Griglia Bobine -->
+                <div id="inventory-spools-view" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4"></div>
+
+                <!-- Griglia Catalogo Modelli -->
+                <div id="inventory-catalog-view" class="hidden grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
+            </section>
+
+            <!-- ================= TAB 4: FINANZE & PROFITTI ================= -->
+            <section id="tab-finance" class="tab-section hidden space-y-6">
+                <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                    <div>
+                        <h2 class="font-serif text-3xl font-semibold text-stone-900">Finanze & Profitti</h2>
+                        <p class="text-sm text-stone-500 mt-0.5">Calcolo analitico dei margini su ogni ordine e controllo di cassa.</p>
+                    </div>
+                    <div class="flex flex-wrap items-center gap-2">
+                        <div class="flex items-center gap-2 bg-white px-3.5 py-2 rounded-xl border border-stone-200 shadow-sm">
+                            <span class="text-xs font-medium text-stone-500">Mese Report:</span>
+                            <input type="month" id="fin-month-filter" onchange="renderFinance()" class="text-sm font-medium text-stone-800 focus:outline-none">
+                            <button type="button" onclick="resetFinanceMonthFilter()" title="Mostra tutto lo storico" class="text-xs text-stone-400 hover:text-stone-700 px-1">✕</button>
+                        </div>
+                        <button onclick="openExpenseModal()" class="px-4 py-2.5 rounded-xl bg-stone-900 text-white text-sm font-medium hover:bg-stone-800 transition-colors shadow-sm">
+                            + Registra Uscita
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Parametri Predefiniti Costi di Produzione -->
+                <div class="bg-white p-5 rounded-2xl border border-stone-200/80 shadow-sm">
+                    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                        <div>
+                            <h3 class="font-semibold text-stone-900 text-sm">Parametri di Costo Predefiniti</h3>
+                            <p class="text-xs text-stone-500">Valori proposti automaticamente nei nuovi ordini (modificabili anche sul singolo ordine).</p>
+                        </div>
+                        <div class="flex flex-wrap items-end gap-3">
+                            <div>
+                                <label class="block text-[11px] font-medium text-stone-500 mb-1">Costo Stampa (€ / ora)</label>
+                                <input type="number" id="setting-hourly-rate" step="0.05" min="0" class="w-32 px-3 py-1.5 rounded-xl border border-stone-200 text-sm font-medium">
+                            </div>
+                            <div>
+                                <label class="block text-[11px] font-medium text-stone-500 mb-1">Costo Materiale Default (€ / kg)</label>
+                                <input type="number" id="setting-material-kg" step="0.50" min="0" class="w-36 px-3 py-1.5 rounded-xl border border-stone-200 text-sm font-medium">
+                            </div>
+                            <button onclick="saveCostSettings()" class="px-4 py-1.5 rounded-xl bg-stone-900 text-white text-sm font-medium hover:bg-stone-800 transition-colors">
+                                Aggiorna Parametri
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- KPI Cards Finanza -->
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+                    <div class="bg-white p-5 rounded-2xl border border-stone-200/80 shadow-sm">
+                        <p class="text-xs font-medium text-stone-500 uppercase tracking-wider">Ricavi Totali Ordini</p>
+                        <p class="text-2xl font-bold text-stone-900 mt-2" id="fin-income">€ 0,00</p>
+                        <p class="text-[11px] text-stone-400 mt-1">Tutti gli ordini (pagati e non)</p>
+                    </div>
+                    <div class="bg-white p-5 rounded-2xl border border-stone-200/80 shadow-sm">
+                        <p class="text-xs font-medium text-stone-500 uppercase tracking-wider">Costi Diretti Produzione</p>
+                        <p class="text-2xl font-bold text-amber-700 mt-2" id="fin-prod-costs">€ 0,00</p>
+                        <p class="text-[11px] text-stone-400 mt-1">Materiale + Stampa + Extra</p>
+                    </div>
+                    <div class="bg-white p-5 rounded-2xl border border-stone-200/80 shadow-sm">
+                        <p class="text-xs font-medium text-stone-500 uppercase tracking-wider">Profitto Ordini</p>
+                        <p class="text-2xl font-bold text-emerald-700 mt-2" id="fin-net">€ 0,00</p>
+                        <p class="text-[11px] text-stone-400 mt-1">Ordini totali - Costi produzione</p>
+                    </div>
+                    <div class="bg-white p-5 rounded-2xl border border-stone-200/80 shadow-sm">
+                        <p class="text-xs font-medium text-stone-500 uppercase tracking-wider">Totale in Cassa</p>
+                        <p class="text-2xl font-bold text-indigo-900 mt-2" id="fin-cash">€ 0,00</p>
+                        <p class="text-[11px] text-stone-400 mt-1">Ordini pagati - Costi produzione</p>
+                    </div>
+                </div>
+
+                <!-- Tabella Analisi Profitti per Ordine -->
+                <div class="bg-white rounded-2xl border border-stone-200/80 shadow-sm overflow-hidden">
+                    <div class="p-4 border-b border-stone-100 flex flex-wrap items-center justify-between gap-3">
+                        <div>
+                            <h3 class="font-semibold text-stone-900 text-sm">Analisi Profitti per Ordine</h3>
+                            <p class="text-xs text-stone-500">Dettaglio ricavi, costo materiale, costo ore stampa e profitto netto su ciascuna commessa.</p>
+                        </div>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left border-collapse">
+                            <thead>
+                                <tr class="bg-stone-50/80 border-b border-stone-200/80 text-[11px] uppercase tracking-wider text-stone-500 font-semibold">
+                                    <th class="py-3 px-4">Data</th>
+                                    <th class="py-3 px-4">Ordine / Cliente</th>
+                                    <th class="py-3 px-4">Stato</th>
+                                    <th class="py-3 px-4 text-right">Tempo & Peso</th>
+                                    <th class="py-3 px-4 text-right">Prezzo Cliente</th>
+                                    <th class="py-3 px-4 text-right">Costo Mat.</th>
+                                    <th class="py-3 px-4 text-right">Costo Stampa</th>
+                                    <th class="py-3 px-4 text-right">Extra</th>
+                                    <th class="py-3 px-4 text-right">Profitto Netto</th>
+                                </tr>
+                            </thead>
+                            <tbody id="finance-orders-profit-body" class="divide-y divide-stone-100 text-sm"></tbody>
+                            <tfoot id="finance-orders-profit-foot" class="bg-stone-50 font-semibold text-sm border-t border-stone-200"></tfoot>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Registro Movimenti -->
+                <div class="bg-white rounded-2xl border border-stone-200/80 shadow-sm overflow-hidden">
+                    <div class="p-4 border-b border-stone-100 flex flex-wrap items-center justify-between gap-3">
+                        <div>
+                            <h3 class="font-semibold text-stone-900 text-sm">Registro Movimenti & Promemoria Uscite</h3>
+                            <p class="text-[11px] text-stone-400">Le uscite registrate servono come promemoria e non riducono il profitto o la cassa</p>
+                        </div>
+                        <select id="fin-type-filter" onchange="renderFinance()" class="px-3 py-1.5 rounded-xl border border-stone-200 text-xs bg-stone-50 focus:outline-none">
+                            <option value="ALL">Tutti i movimenti</option>
+                            <option value="INCOME">Solo Entrate Ordini</option>
+                            <option value="EXPENSE">Solo Promemoria Uscite</option>
+                        </select>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left border-collapse">
+                            <thead>
+                                <tr class="bg-stone-50/80 border-b border-stone-200/80 text-[11px] uppercase tracking-wider text-stone-500 font-semibold">
+                                    <th class="py-3 px-4">Data</th>
+                                    <th class="py-3 px-4">Tipologia</th>
+                                    <th class="py-3 px-4">Categoria</th>
+                                    <th class="py-3 px-4">Descrizione</th>
+                                    <th class="py-3 px-4 text-right">Importo</th>
+                                    <th class="py-3 px-4 text-right">Azioni</th>
+                                </tr>
+                            </thead>
+                            <tbody id="finance-table-body" class="divide-y divide-stone-100 text-sm"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+        </main>
+    </div>
+
+    <!-- ================= MODALE CONFIGURAZIONE SUPABASE CLOUD ================= -->
+    <div id="cloud-modal" class="fixed inset-0 z-50 bg-stone-900/40 backdrop-blur-xs hidden items-center justify-center p-4">
+        <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-xl border border-stone-200">
+            <div class="flex items-center justify-between pb-3 border-b border-stone-100">
+                <h3 class="font-serif text-2xl font-semibold text-[#081B4B]">Collega Database Supabase</h3>
+                <button onclick="closeModal('cloud-modal')" class="text-stone-400 hover:text-stone-700 text-xl leading-none">&times;</button>
+            </div>
+            <p class="text-xs text-stone-500 mt-3 leading-relaxed">
+                Incolla il <strong>Project URL</strong> e la <strong>Anon Public Key</strong> del tuo progetto Supabase gratuito per sincronizzare ordini, bobine e finanze tra PC e smartphone in tempo reale.
+            </p>
+            <form onsubmit="saveSupabaseConfig(event)" class="mt-4 space-y-3">
+                <div>
+                    <label class="block text-xs font-medium text-stone-700 mb-1">Project URL</label>
+                    <input type="url" id="sb-url-input" required placeholder="https://xyzcompany.supabase.co" class="w-full px-3.5 py-2 rounded-xl border border-stone-200 text-xs font-mono">
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-stone-700 mb-1">Anon Public Key</label>
+                    <input type="text" id="sb-key-input" required placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..." class="w-full px-3.5 py-2 rounded-xl border border-stone-200 text-xs font-mono">
+                </div>
+                <div class="pt-3 flex items-center justify-between gap-2">
+                    <button type="button" onclick="disconnectSupabase()" class="px-3 py-2 rounded-xl border border-rose-200 text-xs font-medium text-rose-600 hover:bg-rose-50">Scollega</button>
+                    <div class="flex gap-2">
+                        <button type="button" onclick="closeModal('cloud-modal')" class="px-4 py-2 rounded-xl border border-stone-200 text-xs font-medium text-stone-600 hover:bg-stone-50">Annulla</button>
+                        <button type="submit" class="px-4 py-2 rounded-xl bg-[#081B4B] text-white text-xs font-medium hover:bg-[#0c276b]">Salva e Sincronizza</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- ================= MODALE ORDINE ================= -->
+    <div id="order-modal" class="fixed inset-0 z-50 bg-stone-900/40 backdrop-blur-xs hidden items-center justify-center p-4">
+        <div class="bg-white rounded-2xl max-w-2xl w-full p-6 shadow-xl border border-stone-200 max-h-[90vh] overflow-y-auto">
+            <div class="flex items-center justify-between pb-3 border-b border-stone-100">
+                <h3 id="order-modal-title" class="font-serif text-2xl font-semibold text-stone-900">Nuovo Ordine</h3>
+                <button onclick="closeModal('order-modal')" class="text-stone-400 hover:text-stone-700 text-xl leading-none">&times;</button>
+            </div>
+            <form id="order-form" onsubmit="saveOrder(event)" class="mt-4 space-y-4">
+                <input type="hidden" id="order-id">
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-medium text-stone-700 mb-1">Nome Cliente *</label>
+                        <input type="text" id="order-customer" required placeholder="Es. Giulia Rossi" class="w-full px-3.5 py-2 rounded-xl border border-stone-200 text-sm">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-stone-700 mb-1">Canale Provenienza</label>
+                        <select id="order-channel" class="w-full px-3.5 py-2 rounded-xl border border-stone-200 text-sm bg-white">
+                            <option value="Instagram">Instagram</option>
+                            <option value="Facebook">Facebook</option>
+                            <option value="Passaparola">Passaparola / Evento</option>
+                            <option value="Altro">Altro</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    <div class="sm:col-span-2">
+                        <label class="block text-xs font-medium text-stone-700 mb-1">Seleziona da Catalogo (opzionale)</label>
+                        <select id="order-catalog-preset" onchange="applyCatalogPreset()" class="w-full px-3.5 py-2 rounded-xl border border-stone-200 text-sm bg-stone-50">
+                            <option value="">-- Inserimento manuale --</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-stone-700 mb-1">Quantità *</label>
+                        <input type="number" id="order-qty" value="1" min="1" required oninput="onOrderQtyOrPresetChange()" class="w-full px-3.5 py-2 rounded-xl border border-stone-200 text-sm">
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-medium text-stone-700 mb-1">Nome Prodotto / Personalizzazione *</label>
+                    <input type="text" id="order-product" required placeholder="Es. Vaso Spira 18cm + Incisione" class="w-full px-3.5 py-2 rounded-xl border border-stone-200 text-sm">
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-medium text-stone-700 mb-1">Colore Filamento (Magazzino) *</label>
+                        <select id="order-spool" required onchange="onOrderSpoolChange()" class="w-full px-3.5 py-2 rounded-xl border border-stone-200 text-sm bg-white"></select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-stone-700 mb-1">Stato Lavorazione</label>
+                        <select id="order-status" class="w-full px-3.5 py-2 rounded-xl border border-stone-200 text-sm bg-white">
+                            <option value="Da stampare">Da stampare</option>
+                            <option value="In stampa">In stampa (scala filamento)</option>
+                            <option value="Finitura">Finitura / Confezione</option>
+                            <option value="Consegnato">Consegnato</option>
+                            <option value="Pagato">Pagato</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Sezione Tempi, Pesi e Costi Analitici -->
+                <div class="p-4 rounded-2xl bg-stone-50 border border-stone-200/80 space-y-3">
+                    <p class="text-xs font-semibold uppercase tracking-wider text-stone-600">Calcolo Tempi, Materiale e Profitto</p>
+                    <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                        <div>
+                            <label class="block text-xs font-medium text-stone-700 mb-1">Ore Stampa</label>
+                            <input type="number" id="order-print-hours" value="2" min="0" step="1" oninput="updateOrderProfitPreview()" class="w-full px-3 py-2 rounded-xl border border-stone-200 text-sm bg-white">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-stone-700 mb-1">Minuti Stampa</label>
+                            <input type="number" id="order-print-minutes" value="0" min="0" max="59" step="1" oninput="updateOrderProfitPreview()" class="w-full px-3 py-2 rounded-xl border border-stone-200 text-sm bg-white">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-stone-700 mb-1">Costo Stampa (€/h)</label>
+                            <input type="number" id="order-hourly-rate" value="1.20" min="0" step="0.05" oninput="updateOrderProfitPreview()" class="w-full px-3 py-2 rounded-xl border border-stone-200 text-sm bg-white">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-stone-700 mb-1">Peso Materiale (g) *</label>
+                            <input type="number" id="order-grams" value="80" min="0" required oninput="updateOrderProfitPreview()" class="w-full px-3 py-2 rounded-xl border border-stone-200 text-sm bg-white">
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                        <div>
+                            <label class="block text-xs font-medium text-stone-700 mb-1">Costo Materiale (€/kg)</label>
+                            <input type="number" id="order-material-cost-kg" value="22.00" min="0" step="0.50" oninput="updateOrderProfitPreview()" class="w-full px-3 py-2 rounded-xl border border-stone-200 text-sm bg-white">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-stone-700 mb-1">Costi Extra (€) <span class="text-stone-400 font-normal">(scatola/LED)</span></label>
+                            <input type="number" id="order-extra-cost" value="0" min="0" step="0.10" oninput="updateOrderProfitPreview()" class="w-full px-3 py-2 rounded-xl border border-stone-200 text-sm bg-white">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-stone-700 mb-1">Prezzo al Cliente (€) *</label>
+                            <input type="number" id="order-price" value="25.00" min="0" step="0.50" required oninput="updateOrderProfitPreview()" class="w-full px-3 py-2 rounded-xl border border-stone-200 text-sm font-semibold bg-white">
+                        </div>
+                    </div>
+
+                    <!-- Riepilogo Live Costi & Profitto -->
+                    <div class="pt-2 border-t border-stone-200/80 grid grid-cols-2 sm:grid-cols-5 gap-2 text-xs">
+                        <div class="bg-white p-2.5 rounded-xl border border-stone-200/60">
+                            <span class="text-stone-400 block">Costo Materiale</span>
+                            <strong id="prev-mat-cost" class="text-stone-800 text-sm">€ 0,00</strong>
+                        </div>
+                        <div class="bg-white p-2.5 rounded-xl border border-stone-200/60">
+                            <span class="text-stone-400 block">Costo Stampa</span>
+                            <strong id="prev-print-cost" class="text-stone-800 text-sm">€ 0,00</strong>
+                        </div>
+                        <div class="bg-white p-2.5 rounded-xl border border-stone-200/60">
+                            <span class="text-stone-400 block">Costi Extra</span>
+                            <strong id="prev-extra-cost" class="text-stone-800 text-sm">€ 0,00</strong>
+                        </div>
+                        <div class="bg-white p-2.5 rounded-xl border border-stone-200/60">
+                            <span class="text-stone-400 block">Totale Costi</span>
+                            <strong id="prev-total-cost" class="text-rose-700 text-sm">€ 0,00</strong>
+                        </div>
+                        <div class="col-span-2 sm:col-span-1 bg-emerald-50/80 p-2.5 rounded-xl border border-emerald-200">
+                            <span class="text-emerald-700 block font-medium">Profitto Netto</span>
+                            <strong id="prev-profit" class="text-emerald-800 text-sm">€ 0,00</strong>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-medium text-stone-700 mb-1">Data Ordine</label>
+                        <input type="date" id="order-date" required class="w-full px-3.5 py-2 rounded-xl border border-stone-200 text-sm">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-stone-700 mb-1">Data Consegna Prevista</label>
+                        <input type="date" id="order-due-date" class="w-full px-3.5 py-2 rounded-xl border border-stone-200 text-sm">
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-medium text-stone-700 mb-1">Note / Dettagli Personalizzazione</label>
+                    <textarea id="order-notes" rows="2" placeholder="Iniziali, packaging, indirizzo spedizione..." class="w-full px-3.5 py-2 rounded-xl border border-stone-200 text-sm"></textarea>
+                </div>
+
+                <div class="pt-3 border-t border-stone-100 flex justify-end gap-2">
+                    <button type="button" onclick="closeModal('order-modal')" class="px-4 py-2 rounded-xl border border-stone-200 text-sm font-medium text-stone-600 hover:bg-stone-50">Annulla</button>
+                    <button type="submit" class="px-5 py-2 rounded-xl bg-stone-900 text-white text-sm font-medium hover:bg-stone-800">Salva Ordine</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- ================= MODALE BOBINA ================= -->
+    <div id="spool-modal" class="fixed inset-0 z-50 bg-stone-900/40 backdrop-blur-xs hidden items-center justify-center p-4">
+        <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-xl border border-stone-200">
+            <div class="flex items-center justify-between pb-3 border-b border-stone-100">
+                <h3 id="spool-modal-title" class="font-serif text-2xl font-semibold text-stone-900">Bobina Filamento</h3>
+                <button onclick="closeModal('spool-modal')" class="text-stone-400 hover:text-stone-700 text-xl leading-none">&times;</button>
+            </div>
+            <form id="spool-form" onsubmit="saveSpool(event)" class="mt-4 space-y-4">
+                <input type="hidden" id="spool-id">
+                <div>
+                    <label class="block text-xs font-medium text-stone-700 mb-1">Nome Colore *</label>
+                    <input type="text" id="spool-name" required placeholder="Es. Rosa Pastello Silk" class="w-full px-3.5 py-2 rounded-xl border border-stone-200 text-sm">
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-medium text-stone-700 mb-1">Materiale / Marca</label>
+                        <input type="text" id="spool-material" value="Geeetech PLA" class="w-full px-3.5 py-2 rounded-xl border border-stone-200 text-sm">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-stone-700 mb-1">Colore Visivo</label>
+                        <input type="color" id="spool-hex" value="#e5c8c8" class="w-full h-9 p-1 rounded-xl border border-stone-200 cursor-pointer">
+                    </div>
+                </div>
+                <div class="grid grid-cols-3 gap-3">
+                    <div>
+                        <label class="block text-xs font-medium text-stone-700 mb-1">Peso Iniziale (g)</label>
+                        <input type="number" id="spool-initial" value="1000" min="1" required class="w-full px-3 py-2 rounded-xl border border-stone-200 text-sm">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-stone-700 mb-1">Residui (g) *</label>
+                        <input type="number" id="spool-remaining" value="1000" min="0" required class="w-full px-3 py-2 rounded-xl border border-stone-200 text-sm">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-stone-700 mb-1">Costo (€/kg)</label>
+                        <input type="number" id="spool-cost" value="22.00" step="0.50" min="0" required class="w-full px-3 py-2 rounded-xl border border-stone-200 text-sm">
+                    </div>
+                </div>
+                <div class="pt-3 border-t border-stone-100 flex justify-end gap-2">
+                    <button type="button" onclick="closeModal('spool-modal')" class="px-4 py-2 rounded-xl border border-stone-200 text-sm font-medium text-stone-600 hover:bg-stone-50">Annulla</button>
+                    <button type="submit" class="px-5 py-2 rounded-xl bg-stone-900 text-white text-sm font-medium hover:bg-stone-800">Salva Bobina</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- ================= MODALE PRODOTTO CATALOGO ================= -->
+    <div id="product-modal" class="fixed inset-0 z-50 bg-stone-900/40 backdrop-blur-xs hidden items-center justify-center p-4">
+        <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-xl border border-stone-200">
+            <div class="flex items-center justify-between pb-3 border-b border-stone-100">
+                <h3 id="product-modal-title" class="font-serif text-2xl font-semibold text-stone-900">Modello Catalogo</h3>
+                <button onclick="closeModal('product-modal')" class="text-stone-400 hover:text-stone-700 text-xl leading-none">&times;</button>
+            </div>
+            <form id="product-form" onsubmit="saveProduct(event)" class="mt-4 space-y-4">
+                <input type="hidden" id="product-id">
+                <div>
+                    <label class="block text-xs font-medium text-stone-700 mb-1">Nome Modello *</label>
+                    <input type="text" id="product-name" required placeholder="Es. Lampada Paesaggio Stratificata" class="w-full px-3.5 py-2 rounded-xl border border-stone-200 text-sm">
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-medium text-stone-700 mb-1">Categoria</label>
+                        <input type="text" id="product-category" placeholder="Es. Lampade / Vasi / Eventi" class="w-full px-3.5 py-2 rounded-xl border border-stone-200 text-sm">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-stone-700 mb-1">Peso Slicer (g) *</label>
+                        <input type="number" id="product-grams" value="120" min="1" required class="w-full px-3.5 py-2 rounded-xl border border-stone-200 text-sm">
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-medium text-stone-700 mb-1">Ore Stampa Stimate</label>
+                        <input type="number" id="product-hours" value="3" min="0" step="1" class="w-full px-3 py-2 rounded-xl border border-stone-200 text-sm">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-stone-700 mb-1">Minuti Stampa</label>
+                        <input type="number" id="product-minutes" value="30" min="0" max="59" step="1" class="w-full px-3 py-2 rounded-xl border border-stone-200 text-sm">
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-medium text-stone-700 mb-1">Costo Extra Base (€)</label>
+                        <input type="number" id="product-extra" value="0" step="0.10" min="0" class="w-full px-3.5 py-2 rounded-xl border border-stone-200 text-sm">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-stone-700 mb-1">Prezzo Listino (€) *</label>
+                        <input type="number" id="product-price" value="28.00" step="0.50" min="0" required class="w-full px-3.5 py-2 rounded-xl border border-stone-200 text-sm">
+                    </div>
+                </div>
+                <div class="pt-3 border-t border-stone-100 flex justify-end gap-2">
+                    <button type="button" onclick="closeModal('product-modal')" class="px-4 py-2 rounded-xl border border-stone-200 text-sm font-medium text-stone-600 hover:bg-stone-50">Annulla</button>
+                    <button type="submit" class="px-5 py-2 rounded-xl bg-stone-900 text-white text-sm font-medium hover:bg-stone-800">Salva Modello</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- ================= MODALE USCITA / SPESA ================= -->
+    <div id="expense-modal" class="fixed inset-0 z-50 bg-stone-900/40 backdrop-blur-xs hidden items-center justify-center p-4">
+        <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-xl border border-stone-200">
+            <div class="flex items-center justify-between pb-3 border-b border-stone-100">
+                <h3 class="font-serif text-2xl font-semibold text-stone-900">Registra Uscita</h3>
+                <button onclick="closeModal('expense-modal')" class="text-stone-400 hover:text-stone-700 text-xl leading-none">&times;</button>
+            </div>
+            <form id="expense-form" onsubmit="saveExpense(event)" class="mt-4 space-y-4">
+                <div>
+                    <label class="block text-xs font-medium text-stone-700 mb-1">Categoria Spesa *</label>
+                    <select id="expense-category" class="w-full px-3.5 py-2 rounded-xl border border-stone-200 text-sm bg-white">
+                        <option value="Acquisto Bobine Filamento">Acquisto Bobine Filamento</option>
+                        <option value="Packaging & Scatole">Packaging & Scatole</option>
+                        <option value="Componenti Elettrici / LED">Componenti Elettrici / LED</option>
+                        <option value="Manutenzione & Ugelli">Manutenzione & Ugelli</option>
+                        <option value="Sponsorizzate Social">Sponsorizzate Social</option>
+                        <option value="Spedizioni">Spedizioni</option>
+                        <option value="Altro">Altro</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-stone-700 mb-1">Descrizione *</label>
+                    <input type="text" id="expense-desc" required placeholder="Es. Ordine 3 bobine Geeetech Silk" class="w-full px-3.5 py-2 rounded-xl border border-stone-200 text-sm">
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-medium text-stone-700 mb-1">Importo (€) *</label>
+                        <input type="number" id="expense-amount" step="0.01" min="0.01" required placeholder="0.00" class="w-full px-3.5 py-2 rounded-xl border border-stone-200 text-sm">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-stone-700 mb-1">Data *</label>
+                        <input type="date" id="expense-date" required class="w-full px-3.5 py-2 rounded-xl border border-stone-200 text-sm">
+                    </div>
+                </div>
+                <div class="pt-3 border-t border-stone-100 flex justify-end gap-2">
+                    <button type="button" onclick="closeModal('expense-modal')" class="px-4 py-2 rounded-xl border border-stone-200 text-sm font-medium text-stone-600 hover:bg-stone-50">Annulla</button>
+                    <button type="submit" class="px-5 py-2 rounded-xl bg-stone-900 text-white text-sm font-medium hover:bg-stone-800">Registra Spesa</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- ================= LOGICA APPLICATIVA ================= -->
+    <script>
+        const STORAGE_KEY = 'novelia_studio_gestionale_v3';
+
+        // Opzionale: inserisci qui Project URL e Anon Key di Supabase per averli fissi su tutti i dispositivi senza doverli incollare a mano
+        const HARDCODED_SUPABASE_URL = '';
+        const HARDCODED_SUPABASE_KEY = '';
+
+        // Dati iniziali precaricati per Novelia Studio
+        const DEFAULT_SPOOLS = [
+            { id: 'sp-1', name: 'Bianco', material: 'Geeetech PLA', hex: '#f8fafc', initialGrams: 1000, remainingGrams: 850, costPerKg: 21 },
+            { id: 'sp-2', name: 'Bianco Setificato', material: 'Geeetech PLA Silk', hex: '#f1f5f9', initialGrams: 1000, remainingGrams: 620, costPerKg: 24 },
+            { id: 'sp-3', name: 'Nero', material: 'Geeetech PLA', hex: '#1c1917', initialGrams: 1000, remainingGrams: 910, costPerKg: 21 },
+            { id: 'sp-4', name: 'Beige', material: 'Geeetech PLA', hex: '#e6d5b8', initialGrams: 1000, remainingGrams: 740, costPerKg: 22 },
+            { id: 'sp-5', name: 'Marrone Legno', material: 'Wood PLA', hex: '#8b5a2b', initialGrams: 1000, remainingGrams: 430, costPerKg: 26 },
+            { id: 'sp-6', name: 'Marrone Scuro', material: 'Geeetech PLA', hex: '#4a2e1b', initialGrams: 1000, remainingGrams: 800, costPerKg: 22 },
+            { id: 'sp-7', name: 'Oro', material: 'Geeetech PLA Silk', hex: '#d4af37', initialGrams: 1000, remainingGrams: 180, costPerKg: 25 },
+            { id: 'sp-8', name: 'Argento', material: 'Geeetech PLA Silk', hex: '#c0c0c0', initialGrams: 1000, remainingGrams: 540, costPerKg: 25 },
+            { id: 'sp-9', name: 'Rame', material: 'Geeetech PLA Silk', hex: '#b87333', initialGrams: 1000, remainingGrams: 690, costPerKg: 25 },
+            { id: 'sp-10', name: 'Rosso', material: 'Geeetech PLA', hex: '#dc2626', initialGrams: 1000, remainingGrams: 770, costPerKg: 21 },
+            { id: 'sp-11', name: 'Rosa Pastello', material: 'Geeetech PLA+', hex: '#fbcfe8', initialGrams: 1000, remainingGrams: 310, costPerKg: 23 },
+            { id: 'sp-12', name: 'Azzurro Pastello', material: 'Geeetech PLA+', hex: '#bae6fd', initialGrams: 1000, remainingGrams: 490, costPerKg: 23 },
+            { id: 'sp-13', name: 'Blu', material: 'Geeetech PLA', hex: '#2563eb', initialGrams: 1000, remainingGrams: 880, costPerKg: 21 },
+            { id: 'sp-14', name: 'Verde Salvia', material: 'Geeetech PLA Matte', hex: '#9caf88', initialGrams: 1000, remainingGrams: 150, costPerKg: 24 },
+            { id: 'sp-15', name: 'Verde Smeraldo', material: 'Geeetech PLA Silk', hex: '#10b981', initialGrams: 1000, remainingGrams: 640, costPerKg: 25 },
+            { id: 'sp-16', name: 'Lilla', material: 'Geeetech PLA+', hex: '#d8b4fe', initialGrams: 1000, remainingGrams: 520, costPerKg: 23 },
+            { id: 'sp-17', name: 'Giallo', material: 'Geeetech PLA', hex: '#facc15', initialGrams: 1000, remainingGrams: 950, costPerKg: 21 },
+            { id: 'sp-18', name: 'Arancione', material: 'Geeetech PLA', hex: '#f97316', initialGrams: 1000, remainingGrams: 820, costPerKg: 21 }
+        ];
+
+        const DEFAULT_PRODUCTS = [
+            { id: 'pr-1', name: 'Vaso Spira Minimal (18cm)', category: 'Vasi & Arredo', estimatedGrams: 135, printHours: 3, printMinutes: 45, extraCost: 0.50, basePrice: 24.00 },
+            { id: 'pr-2', name: 'Angelo Moderno Satinato', category: 'Bomboniere & Ricorrenze', estimatedGrams: 45, printHours: 1, printMinutes: 20, extraCost: 1.20, basePrice: 12.00 },
+            { id: 'pr-3', name: 'Lampada Paesaggio Stratificata', category: 'Lampade', estimatedGrams: 220, printHours: 6, printMinutes: 30, extraCost: 4.50, basePrice: 45.00 },
+            { id: 'pr-4', name: 'Portaconfetti Cuore Intrecciato', category: 'Bomboniere & Ricorrenze', estimatedGrams: 30, printHours: 0, printMinutes: 55, extraCost: 0.80, basePrice: 7.50 }
+        ];
+
+        function getInitialDemoState() {
+            const today = new Date().toISOString().slice(0, 10);
+            const inThreeDays = new Date(Date.now() + 3 * 86400000).toISOString().slice(0, 10);
+            return {
+                pin: '2026',
+                settings: {
+                    hourlyPrintRate: 1.20,
+                    defaultMaterialCostPerKg: 22.00
+                },
+                spools: JSON.parse(JSON.stringify(DEFAULT_SPOOLS)),
+                products: JSON.parse(JSON.stringify(DEFAULT_PRODUCTS)),
+                orders: [
+                    {
+                        id: 'ord-demo-1',
+                        customer: 'Elena Marchetti',
+                        channel: 'Instagram',
+                        productName: 'Lampada Paesaggio Stratificata',
+                        quantity: 1,
+                        spoolId: 'sp-2',
+                        filamentGrams: 220,
+                        printHours: 6,
+                        printMinutes: 30,
+                        hourlyPrintRate: 1.20,
+                        materialCostPerKg: 24.00,
+                        status: 'In stampa',
+                        deductedGrams: 220,
+                        price: 45.00,
+                        extraCost: 4.50,
+                        orderDate: today,
+                        dueDate: inThreeDays,
+                        notes: 'Cavo bianco con interruttore incluso'
+                    },
+                    {
+                        id: 'ord-demo-2',
+                        customer: 'Matrimonio Conti-Riva',
+                        channel: 'Passaparola',
+                        productName: 'Angelo Moderno Satinato (Lotto 20 pz)',
+                        quantity: 20,
+                        spoolId: 'sp-4',
+                        filamentGrams: 900,
+                        printHours: 24,
+                        printMinutes: 0,
+                        hourlyPrintRate: 1.20,
+                        materialCostPerKg: 22.00,
+                        status: 'Pagato',
+                        deductedGrams: 900,
+                        price: 220.00,
+                        extraCost: 24.00,
+                        orderDate: today,
+                        dueDate: today,
+                        notes: 'Confezionati con nastro avorio'
+                    }
+                ],
+                expenses: [
+                    {
+                        id: 'exp-demo-1',
+                        category: 'Acquisto Bobine Filamento',
+                        description: 'Rifornimento 4 bobine Geeetech Silk',
+                        amount: 88.00,
+                        date: today
+                    },
+                    {
+                        id: 'exp-demo-2',
+                        category: 'Componenti Elettrici / LED',
+                        description: 'Kit portalampada E14 con interruttore (5 pz)',
+                        amount: 19.50,
+                        date: today
+                    }
+                ]
+            };
+        }
+
+        let appState = loadState();
+        window.getAppState = () => appState;
+
+        function loadState() {
+            try {
+                const raw = localStorage.getItem(STORAGE_KEY);
+                if (raw) {
+                    const parsed = JSON.parse(raw);
+                    const base = getInitialDemoState();
+                    return {
+                        pin: parsed.pin || base.pin,
+                        settings: { ...base.settings, ...(parsed.settings || {}) },
+                        spools: Array.isArray(parsed.spools) ? parsed.spools : base.spools,
+                        products: Array.isArray(parsed.products) ? parsed.products : base.products,
+                        orders: Array.isArray(parsed.orders) ? parsed.orders : base.orders,
+                        expenses: Array.isArray(parsed.expenses) ? parsed.expenses : base.expenses
+                    };
+                }
+            } catch (e) {
+                console.error('Errore lettura localStorage:', e);
+            }
+            const initial = getInitialDemoState();
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(initial));
+            return initial;
+        }
+
+        function saveState() {
+            try {
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(appState));
+                if (typeof window.syncStateToCloud === 'function') {
+                    window.syncStateToCloud(appState);
+                }
+            } catch (e) {
+                showToast('Errore nel salvataggio dei dati', 'error');
+            }
+        }
+
+        // Gestione Accesso con PIN
+        function checkAuthSession() {
+            const unlocked = sessionStorage.getItem('novelia_unlocked') === 'true';
+            const gate = document.getElementById('auth-gate');
+            if (!gate) return;
+            if (unlocked) {
+                gate.classList.add('hidden');
+            } else {
+                gate.classList.remove('hidden');
+            }
+        }
+
+        function handlePinUnlock(e) {
+            e.preventDefault();
+            const input = document.getElementById('auth-pin-input');
+            const err = document.getElementById('auth-error-msg');
+            const currentPin = String(appState.pin || '2026');
+            if (input.value.trim() === currentPin) {
+                sessionStorage.setItem('novelia_unlocked', 'true');
+                err.classList.add('hidden');
+                input.value = '';
+                document.getElementById('auth-gate').classList.add('hidden');
+                showToast('Benvenuto in Novelia Studio');
+            } else {
+                err.classList.remove('hidden');
+                input.focus();
+            }
+        }
+
+        function lockApp() {
+            sessionStorage.removeItem('novelia_unlocked');
+            const gate = document.getElementById('auth-gate');
+            if (gate) gate.classList.remove('hidden');
+        }
+
+        function toggleChangePinBox() {
+            const box = document.getElementById('change-pin-box');
+            if (box) box.classList.toggle('hidden');
+        }
+
+        function saveNewPin() {
+            const oldVal = document.getElementById('old-pin-input').value.trim();
+            const newVal = document.getElementById('new-pin-input').value.trim();
+            const currentPin = String(appState.pin || '2026');
+            if (oldVal !== currentPin) {
+                showToast('Il PIN attuale non corrisponde', 'error');
+                return;
+            }
+            if (newVal.length < 4) {
+                showToast('Il nuovo PIN deve avere almeno 4 caratteri', 'error');
+                return;
+            }
+            appState.pin = newVal;
+            saveState();
+            document.getElementById('old-pin-input').value = '';
+            document.getElementById('new-pin-input').value = '';
+            document.getElementById('change-pin-box').classList.add('hidden');
+            showToast('PIN aziendale aggiornato e sincronizzato');
+        }
+
+        // Utility Formattazione & Calcolo Costi Ordine
+        function formatCurrency(val) {
+            return new Intl.NumberFormat('it-IT', { style: 'currency', currency: 'EUR' }).format(Number(val) || 0);
+        }
+
+        function formatDuration(totalMinutes) {
+            const mins = Math.max(0, Math.round(Number(totalMinutes) || 0));
+            const h = Math.floor(mins / 60);
+            const m = mins % 60;
+            return `${h}h ${m}m`;
+        }
+
+        function calculateOrderEconomics(order) {
+            const hours = Number(order.printHours) || 0;
+            const minutes = Number(order.printMinutes) || 0;
+            const totalMinutes = (hours * 60) + minutes;
+            const totalHoursDecimal = totalMinutes / 60;
+
+            const hourlyRate = order.hourlyPrintRate !== undefined
+                ? Number(order.hourlyPrintRate)
+                : (Number(appState.settings?.hourlyPrintRate) || 0);
+
+            const spool = appState.spools.find(s => s.id === order.spoolId);
+            const materialCostPerKg = order.materialCostPerKg !== undefined
+                ? Number(order.materialCostPerKg)
+                : (spool ? Number(spool.costPerKg) : (Number(appState.settings?.defaultMaterialCostPerKg) || 0));
+
+            const grams = Number(order.filamentGrams) || 0;
+            const materialCost = (grams / 1000) * materialCostPerKg;
+            const printCost = totalHoursDecimal * hourlyRate;
+            const extraCost = Number(order.extraCost) || 0;
+            const totalCost = materialCost + printCost + extraCost;
+            const price = Number(order.price) || 0;
+            const profit = price - totalCost;
+            const marginPct = price > 0 ? (profit / price) * 100 : 0;
+
+            return {
+                totalMinutes,
+                hourlyRate,
+                materialCostPerKg,
+                materialCost,
+                printCost,
+                extraCost,
+                totalCost,
+                price,
+                profit,
+                marginPct
+            };
+        }
+
+        function escapeHtml(str) {
+            if (!str) return '';
+            return String(str).replace(/[&<>"']/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[m]));
+        }
+
+        function showToast(message, type = 'success') {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            const colors = type === 'error'
+                ? 'bg-rose-900 text-white'
+                : type === 'warning'
+                    ? 'bg-amber-800 text-white'
+                    : 'bg-stone-900 text-white';
+            toast.className = `${colors} px-4 py-3 rounded-xl shadow-lg text-xs font-medium flex items-center gap-2 transition-all duration-300 transform translate-y-2 opacity-0`;
+            toast.innerHTML = `<span>${type === 'error' ? '⚠️' : '✓'}</span><span>${escapeHtml(message)}</span>`;
+            container.appendChild(toast);
+            requestAnimationFrame(() => {
+                toast.classList.remove('translate-y-2', 'opacity-0');
+            });
+            setTimeout(() => {
+                toast.classList.add('opacity-0', 'translate-y-2');
+                setTimeout(() => toast.remove(), 300);
+            }, 3200);
+        }
+
+        // Navigazione Tabs
+        function switchTab(tabId) {
+            document.querySelectorAll('.tab-section').forEach(sec => sec.classList.add('hidden'));
+            document.getElementById(`tab-${tabId}`).classList.remove('hidden');
+
+            document.querySelectorAll('.nav-btn').forEach(btn => {
+                const isTarget = btn.dataset.tab === tabId;
+                btn.classList.toggle('bg-[#081B4B]', isTarget);
+                btn.classList.toggle('text-white', isTarget);
+                btn.classList.toggle('shadow-sm', isTarget);
+                btn.classList.toggle('text-stone-600', !isTarget);
+            });
+
+            // Chiudi menu mobile dopo click
+            const nav = document.getElementById('sidebar-nav');
+            if (window.innerWidth < 1024) {
+                nav.classList.add('hidden');
+            }
+
+            if (tabId === 'dashboard') renderDashboard();
+            if (tabId === 'orders') renderOrders();
+            if (tabId === 'inventory') renderInventory();
+            if (tabId === 'finance') renderFinance();
+        }
+
+        function toggleMobileMenu() {
+            const nav = document.getElementById('sidebar-nav');
+            if (nav) nav.classList.toggle('hidden');
+        }
+
+        function closeModal(modalId) {
+            const modal = document.getElementById(modalId);
+            if (modal) {
+                modal.classList.add('hidden');
+                modal.classList.remove('flex');
+            }
+        }
+
+        function switchInventorySubTab(subTab) {
+            const spoolsView = document.getElementById('inventory-spools-view');
+            const catalogView = document.getElementById('inventory-catalog-view');
+            const spoolsBtn = document.getElementById('subtab-spools-btn');
+            const catalogBtn = document.getElementById('subtab-catalog-btn');
+
+            if (subTab === 'spools') {
+                spoolsView.classList.remove('hidden');
+                catalogView.classList.add('hidden');
+                catalogView.classList.remove('grid');
+                spoolsBtn.className = 'px-4 py-2 rounded-xl text-sm font-medium bg-stone-900 text-white';
+                catalogBtn.className = 'px-4 py-2 rounded-xl text-sm font-medium text-stone-600 hover:bg-stone-100';
+            } else {
+                spoolsView.classList.add('hidden');
+                catalogView.classList.remove('hidden');
+                catalogView.classList.add('grid');
+                catalogBtn.className = 'px-4 py-2 rounded-xl text-sm font-medium bg-stone-900 text-white';
+                spoolsBtn.className = 'px-4 py-2 rounded-xl text-sm font-medium text-stone-600 hover:bg-stone-100';
+            }
+        }
+
+        // ================= RENDER DASHBOARD =================
+        function renderDashboard() {
+            const currentMonth = new Date().toISOString().slice(0, 7);
+            const monthOrders = appState.orders.filter(o => (o.orderDate || '').startsWith(currentMonth));
+            const paidMonthOrders = monthOrders.filter(o => o.status === 'Pagato');
+
+            // Ricavi e costi su TUTTI gli ordini del mese (indipendentemente se pagati)
+            const totalOrdersMonth = monthOrders.reduce((sum, o) => sum + (Number(o.price) || 0), 0);
+            const totalProdCostMonth = monthOrders.reduce((sum, o) => sum + calculateOrderEconomics(o).totalCost, 0);
+            const netProfitMonth = totalOrdersMonth - totalProdCostMonth;
+
+            // Totale in cassa: solo ordini pagati meno i loro costi diretti di produzione
+            const paidRevenueMonth = paidMonthOrders.reduce((sum, o) => sum + (Number(o.price) || 0), 0);
+            const paidProdCostMonth = paidMonthOrders.reduce((sum, o) => sum + calculateOrderEconomics(o).totalCost, 0);
+            const cashMonth = paidRevenueMonth - paidProdCostMonth;
+
+            const activeOrders = appState.orders.filter(o => o.status !== 'Consegnato' && o.status !== 'Pagato');
+
+            document.getElementById('kpi-revenue').textContent = formatCurrency(cashMonth);
+            document.getElementById('kpi-expenses').textContent = formatCurrency(totalProdCostMonth);
+            document.getElementById('kpi-profit').textContent = formatCurrency(netProfitMonth);
+            document.getElementById('kpi-profit').className = `text-2xl font-bold mt-2 ${netProfitMonth >= 0 ? 'text-emerald-700' : 'text-rose-700'}`;
+            document.getElementById('kpi-active-orders').textContent = activeOrders.length;
+
+            // Dati grafico ultimi 6 mesi (Totale in cassa vs Costi Diretti Produzione)
+            const months = [];
+            for (let i = 5; i >= 0; i--) {
+                const d = new Date();
+                d.setMonth(d.getMonth() - i);
+                months.push(d.toISOString().slice(0, 7));
+            }
+            const chartData = months.map(m => {
+                const mPaidOrders = appState.orders.filter(o => o.status === 'Pagato' && (o.orderDate || '').startsWith(m));
+                const mAllOrders = appState.orders.filter(o => (o.orderDate || '').startsWith(m));
+                const inc = mPaidOrders.reduce((s, o) => s + (Number(o.price) || 0), 0);
+                const exp = mAllOrders.reduce((s, o) => s + calculateOrderEconomics(o).totalCost, 0);
+                return { month: m, income: inc, expense: exp };
+            });
+            renderFinanceChart(chartData);
+
+            // Allerta Filamenti (< 200g)
+            const lowSpools = appState.spools.filter(s => Number(s.remainingGrams) < 200);
+            document.getElementById('low-stock-badge').textContent = `${lowSpools.length} sotto soglia`;
+            const lowList = document.getElementById('low-stock-list');
+            if (lowSpools.length === 0) {
+                lowList.innerHTML = `<div class="p-4 rounded-xl bg-emerald-50/70 text-emerald-800 text-xs">Tutte le bobine hanno scorte sufficienti (≥ 200g).</div>`;
+            } else {
+                lowList.innerHTML = lowSpools.map(s => `
+                    <div class="flex items-center justify-between p-3 rounded-xl bg-amber-50/60 border border-amber-200/70">
+                        <div class="flex items-center gap-2.5">
+                            <span class="w-4 h-4 rounded-full border border-stone-300 flex-shrink-0" style="background-color:${s.hex}"></span>
+                            <div>
+                                <p class="text-xs font-semibold text-stone-900">${escapeHtml(s.name)}</p>
+                                <p class="text-[11px] text-stone-500">${escapeHtml(s.material)}</p>
+                            </div>
+                        </div>
+                        <span class="text-xs font-bold text-rose-700">${s.remainingGrams}g</span>
+                    </div>
+                `).join('');
+            }
+
+            // Prossime consegne
+            const upcomingContainer = document.getElementById('dashboard-upcoming-orders');
+            if (upcomingContainer) {
+                const sortedActive = [...activeOrders].sort((a, b) => (a.dueDate || '9999').localeCompare(b.dueDate || '9999')).slice(0, 5);
+                if (sortedActive.length === 0) {
+                    upcomingContainer.innerHTML = `<p class="py-6 text-center text-sm text-stone-400">Nessun ordine in coda al momento.</p>`;
+                } else {
+                    upcomingContainer.innerHTML = sortedActive.map(o => {
+                        const spool = appState.spools.find(s => s.id === o.spoolId);
+                        return `
+                            <div class="py-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                                <div class="flex items-center gap-3">
+                                    <span class="w-3.5 h-3.5 rounded-full border border-stone-300" style="background-color:${spool ? spool.hex : '#ccc'}"></span>
+                                    <div>
+                                        <p class="text-sm font-medium text-stone-900">${escapeHtml(o.customer)} — <span class="text-stone-600 font-normal">${escapeHtml(o.productName)} (x${o.quantity})</span></p>
+                                        <p class="text-xs text-stone-400">${spool ? escapeHtml(spool.name) : 'Colore N/D'} • ${o.filamentGrams}g • Consegna: ${o.dueDate || 'Da definire'}</p>
+                                    </div>
+                                </div>
+                                <div class="flex items-center gap-3 self-end sm:self-center">
+                                    <span class="px-2.5 py-1 rounded-full text-xs font-medium ${getStatusBadgeClass(o.status)}">${escapeHtml(o.status)}</span>
+                                    <span class="text-sm font-semibold text-stone-800">${formatCurrency(o.price)}</span>
+                                </div>
+                            </div>
+                        `;
+                    }).join('');
+                }
+            }
+        }
+
+        function renderFinanceChart(data) {
+            const container = document.getElementById('finance-chart-container');
+            const maxVal = Math.max(...data.flatMap(d => [d.income, d.expense]), 100);
+            const monthNames = ['Gen', 'Feb', 'Mar', 'Apr', 'Mag', 'Giu', 'Lug', 'Ago', 'Set', 'Ott', 'Nov', 'Dic'];
+
+            container.innerHTML = data.map(d => {
+                const incHeight = Math.round((d.income / maxVal) * 165);
+                const expHeight = Math.round((d.expense / maxVal) * 165);
+                const mIndex = parseInt(d.month.split('-')[1], 10) - 1;
+                const label = monthNames[mIndex] || d.month;
+
+                return `
+                    <div class="flex-1 flex flex-col items-center gap-2 group">
+                        <div class="flex items-end gap-1.5 h-44 w-full justify-center px-1">
+                            <div class="w-4 sm:w-6 bg-emerald-600 rounded-t-md transition-all duration-500 relative group-hover:bg-emerald-500" style="height: ${Math.max(incHeight, 4)}px" title="Entrate: ${formatCurrency(d.income)}"></div>
+                            <div class="w-4 sm:w-6 bg-amber-500 rounded-t-md transition-all duration-500 relative group-hover:bg-amber-400" style="height: ${Math.max(expHeight, 4)}px" title="Uscite: ${formatCurrency(d.expense)}"></div>
+                        </div>
+                        <span class="text-xs font-medium text-stone-500">${label}</span>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // ================= RENDER & LOGICA ORDINI =================
+        function getStatusBadgeClass(status) {
+            switch (status) {
+                case 'Da stampare': return 'bg-stone-100 text-stone-700';
+                case 'In stampa': return 'bg-amber-100 text-amber-800';
+                case 'Finitura': return 'bg-sky-100 text-sky-800';
+                case 'Consegnato': return 'bg-indigo-100 text-indigo-800';
+                case 'Pagato': return 'bg-emerald-100 text-emerald-800';
+                default: return 'bg-stone-100 text-stone-700';
+            }
+        }
+
+        function resetOrderMonthFilter() {
+            const el = document.getElementById('order-month-filter');
+            if (el) el.value = '';
+            renderOrders();
+        }
+
+        function renderOrders() {
+            const searchEl = document.getElementById('order-search');
+            const statusEl = document.getElementById('order-status-filter');
+            const monthEl = document.getElementById('order-month-filter');
+
+            const query = (searchEl ? searchEl.value : '').toLowerCase();
+            const statusFilter = statusEl ? statusEl.value : 'ALL';
+            const monthFilter = monthEl ? monthEl.value : '';
+
+            const filtered = appState.orders.filter(o => {
+                const matchesStatus = statusFilter === 'ALL' || o.status === statusFilter;
+                const matchesMonth = !monthFilter || (o.orderDate || '').startsWith(monthFilter);
+                const matchesQuery = (o.customer || '').toLowerCase().includes(query) ||
+                    (o.productName || '').toLowerCase().includes(query) ||
+                    (o.notes || '').toLowerCase().includes(query);
+                return matchesStatus && matchesMonth && matchesQuery;
+            }).sort((a, b) => (b.orderDate || '').localeCompare(a.orderDate || ''));
+
+            // Aggiorna barra riepilogo periodo
+            const sumTime = filtered.reduce((acc, o) => acc + calculateOrderEconomics(o).totalMinutes, 0);
+            const sumRev = filtered.reduce((acc, o) => acc + (Number(o.price) || 0), 0);
+            const sumCost = filtered.reduce((acc, o) => acc + calculateOrderEconomics(o).totalCost, 0);
+            const sumProfit = sumRev - sumCost;
+
+            const countEl = document.getElementById('ord-sum-count');
+            if (countEl) {
+                countEl.textContent = filtered.length;
+                document.getElementById('ord-sum-time').textContent = formatDuration(sumTime);
+                document.getElementById('ord-sum-revenue').textContent = formatCurrency(sumRev);
+                document.getElementById('ord-sum-cost').textContent = formatCurrency(sumCost);
+                const profEl = document.getElementById('ord-sum-profit');
+                profEl.textContent = formatCurrency(sumProfit);
+                profEl.className = `text-lg font-bold mt-0.5 ${sumProfit >= 0 ? 'text-emerald-700' : 'text-rose-700'}`;
+            }
+
+            const tbody = document.getElementById('orders-table-body');
+            if (filtered.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="8" class="py-10 text-center text-stone-400">Nessun ordine trovato con questi filtri.</td></tr>`;
+                return;
+            }
+
+            tbody.innerHTML = filtered.map(o => {
+                const spool = appState.spools.find(s => s.id === o.spoolId);
+                const eco = calculateOrderEconomics(o);
+
+                return `
+                    <tr class="hover:bg-stone-50/70 transition-colors">
+                        <td class="py-3.5 px-4">
+                            <p class="font-semibold text-stone-900">${escapeHtml(o.customer)}</p>
+                            <p class="text-xs text-stone-400">${escapeHtml(o.channel)} • Ord: ${o.orderDate || '-'}</p>
+                        </td>
+                        <td class="py-3.5 px-4">
+                            <p class="font-medium text-stone-800">${escapeHtml(o.productName)} <span class="text-xs font-semibold text-stone-500">x${o.quantity}</span></p>
+                            <div class="flex items-center gap-1.5 mt-0.5">
+                                <span class="w-2.5 h-2.5 rounded-full border border-stone-300" style="background-color:${spool ? spool.hex : '#ccc'}"></span>
+                                <span class="text-xs text-stone-500">${spool ? escapeHtml(spool.name) : 'Colore rimosso'}</span>
+                            </div>
+                        </td>
+                        <td class="py-3.5 px-4 text-xs text-stone-600">
+                            <p class="font-medium text-stone-800">⏱ ${formatDuration(eco.totalMinutes)} <span class="text-stone-400">(${formatCurrency(eco.hourlyRate)}/h)</span></p>
+                            <p class="text-stone-500 mt-0.5">⚖️ ${o.filamentGrams}g <span class="text-stone-400">(${formatCurrency(eco.materialCostPerKg)}/kg)</span></p>
+                            ${o.deductedGrams > 0 ? '<span class="text-[10px] text-emerald-600 font-medium">✓ Scalato da magazzino</span>' : '<span class="text-[10px] text-stone-400">In attesa stampa</span>'}
+                        </td>
+                        <td class="py-3.5 px-4">
+                            <select onchange="quickUpdateOrderStatus('${o.id}', this.value)" class="px-2.5 py-1 rounded-full text-xs font-medium border-0 cursor-pointer focus:ring-2 focus:ring-novelia-400 ${getStatusBadgeClass(o.status)}">
+                                ${['Da stampare', 'In stampa', 'Finitura', 'Consegnato', 'Pagato'].map(st =>
+                                    `<option value="${st}" ${o.status === st ? 'selected' : ''}>${st}</option>`
+                                ).join('')}
+                            </select>
+                        </td>
+                        <td class="py-3.5 px-4 text-right font-semibold text-stone-900">
+                            ${formatCurrency(eco.price)}
+                        </td>
+                        <td class="py-3.5 px-4 text-right text-xs">
+                            <p class="font-semibold text-rose-700">-${formatCurrency(eco.totalCost)}</p>
+                            <p class="text-[10px] text-stone-400">Mat: ${formatCurrency(eco.materialCost)} • St: ${formatCurrency(eco.printCost)}${eco.extraCost > 0 ? ` • Ex: ${formatCurrency(eco.extraCost)}` : ''}</p>
+                        </td>
+                        <td class="py-3.5 px-4 text-right">
+                            <p class="font-bold ${eco.profit >= 0 ? 'text-emerald-700' : 'text-rose-600'}">${formatCurrency(eco.profit)}</p>
+                            <span class="inline-block px-1.5 py-0.5 rounded text-[10px] font-medium ${eco.profit >= 0 ? 'bg-emerald-50 text-emerald-700' : 'bg-rose-50 text-rose-700'}">${eco.marginPct.toFixed(0)}%</span>
+                        </td>
+                        <td class="py-3.5 px-4 text-right">
+                            <div class="inline-flex items-center gap-1">
+                                <button onclick="openOrderModal('${o.id}')" class="p-1.5 text-stone-500 hover:text-stone-900 hover:bg-stone-100 rounded-lg" title="Modifica">✏️</button>
+                                <button onclick="deleteOrder('${o.id}')" class="p-1.5 text-stone-500 hover:text-rose-600 hover:bg-rose-50 rounded-lg" title="Elimina">🗑️</button>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        function openOrderModal(orderId = null) {
+            const modal = document.getElementById('order-modal');
+            const spoolSelect = document.getElementById('order-spool');
+            const presetSelect = document.getElementById('order-catalog-preset');
+
+            spoolSelect.innerHTML = appState.spools.map(s =>
+                `<option value="${s.id}">${escapeHtml(s.name)} (${s.remainingGrams}g disp. - ${formatCurrency(s.costPerKg)}/kg)</option>`
+            ).join('');
+
+            presetSelect.innerHTML = `<option value="">-- Inserimento manuale --</option>` +
+                appState.products.map(p => `<option value="${p.id}">${escapeHtml(p.name)} (${p.estimatedGrams}g • ${p.printHours || 0}h ${p.printMinutes || 0}m • ${formatCurrency(p.basePrice)})</option>`).join('');
+
+            const defaultHourly = Number(appState.settings?.hourlyPrintRate) || 1.20;
+            const defaultMatKg = Number(appState.settings?.defaultMaterialCostPerKg) || 22.00;
+
+            if (orderId) {
+                const o = appState.orders.find(item => item.id === orderId);
+                if (!o) return;
+                const spool = appState.spools.find(s => s.id === o.spoolId);
+                document.getElementById('order-modal-title').textContent = 'Modifica Ordine';
+                document.getElementById('order-id').value = o.id;
+                document.getElementById('order-customer').value = o.customer;
+                document.getElementById('order-channel').value = o.channel || 'Instagram';
+                document.getElementById('order-qty').value = o.quantity || 1;
+                document.getElementById('order-product').value = o.productName;
+                document.getElementById('order-spool').value = o.spoolId;
+                document.getElementById('order-status').value = o.status;
+                document.getElementById('order-print-hours').value = o.printHours ?? 0;
+                document.getElementById('order-print-minutes').value = o.printMinutes ?? 0;
+                document.getElementById('order-hourly-rate').value = o.hourlyPrintRate ?? defaultHourly;
+                document.getElementById('order-grams').value = o.filamentGrams;
+                document.getElementById('order-material-cost-kg').value = o.materialCostPerKg ?? (spool ? spool.costPerKg : defaultMatKg);
+                document.getElementById('order-extra-cost').value = o.extraCost || 0;
+                document.getElementById('order-price').value = o.price;
+                document.getElementById('order-date').value = o.orderDate || '';
+                document.getElementById('order-due-date').value = o.dueDate || '';
+                document.getElementById('order-notes').value = o.notes || '';
+            } else {
+                const firstSpool = appState.spools[0];
+                document.getElementById('order-modal-title').textContent = 'Nuovo Ordine';
+                document.getElementById('order-form').reset();
+                document.getElementById('order-id').value = '';
+                document.getElementById('order-qty').value = 1;
+                document.getElementById('order-print-hours').value = 2;
+                document.getElementById('order-print-minutes').value = 0;
+                document.getElementById('order-hourly-rate').value = defaultHourly;
+                document.getElementById('order-grams').value = 80;
+                document.getElementById('order-material-cost-kg').value = firstSpool ? firstSpool.costPerKg : defaultMatKg;
+                document.getElementById('order-extra-cost').value = 0;
+                document.getElementById('order-price').value = 25.00;
+                document.getElementById('order-date').value = new Date().toISOString().slice(0, 10);
+            }
+
+            updateOrderProfitPreview();
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+        }
+
+        function onOrderSpoolChange() {
+            const spoolId = document.getElementById('order-spool').value;
+            const spool = appState.spools.find(s => s.id === spoolId);
+            if (spool) {
+                document.getElementById('order-material-cost-kg').value = spool.costPerKg;
+                updateOrderProfitPreview();
+            }
+        }
+
+        function onOrderQtyOrPresetChange() {
+            const presetId = document.getElementById('order-catalog-preset').value;
+            if (presetId) {
+                applyCatalogPreset();
+            } else {
+                updateOrderProfitPreview();
+            }
+        }
+
+        function applyCatalogPreset() {
+            const presetId = document.getElementById('order-catalog-preset').value;
+            if (!presetId) return;
+            const prod = appState.products.find(p => p.id === presetId);
+            const qty = Math.max(1, parseInt(document.getElementById('order-qty').value, 10) || 1);
+            if (prod) {
+                document.getElementById('order-product').value = prod.name;
+                document.getElementById('order-grams').value = prod.estimatedGrams * qty;
+
+                const singleMins = ((Number(prod.printHours) || 0) * 60) + (Number(prod.printMinutes) || 0);
+                const totalMins = singleMins * qty;
+                document.getElementById('order-print-hours').value = Math.floor(totalMins / 60);
+                document.getElementById('order-print-minutes').value = totalMins % 60;
+
+                document.getElementById('order-extra-cost').value = ((prod.extraCost || 0) * qty).toFixed(2);
+                document.getElementById('order-price').value = (prod.basePrice * qty).toFixed(2);
+                updateOrderProfitPreview();
+            }
+        }
+
+        function updateOrderProfitPreview() {
+            const draftOrder = {
+                spoolId: document.getElementById('order-spool').value,
+                printHours: document.getElementById('order-print-hours').value,
+                printMinutes: document.getElementById('order-print-minutes').value,
+                hourlyPrintRate: document.getElementById('order-hourly-rate').value,
+                filamentGrams: document.getElementById('order-grams').value,
+                materialCostPerKg: document.getElementById('order-material-cost-kg').value,
+                extraCost: document.getElementById('order-extra-cost').value,
+                price: document.getElementById('order-price').value
+            };
+            const eco = calculateOrderEconomics(draftOrder);
+
+            document.getElementById('prev-mat-cost').textContent = formatCurrency(eco.materialCost);
+            document.getElementById('prev-print-cost').textContent = formatCurrency(eco.printCost);
+            document.getElementById('prev-extra-cost').textContent = formatCurrency(eco.extraCost);
+            document.getElementById('prev-total-cost').textContent = formatCurrency(eco.totalCost);
+
+            const profitEl = document.getElementById('prev-profit');
+            profitEl.textContent = `${formatCurrency(eco.profit)} (${eco.marginPct.toFixed(0)}%)`;
+            profitEl.className = `text-sm font-bold ${eco.profit >= 0 ? 'text-emerald-800' : 'text-rose-700'}`;
+        }
+
+        function shouldDeductForStatus(status) {
+            return status !== 'Da stampare';
+        }
+
+        function saveOrder(e) {
+            e.preventDefault();
+            const id = document.getElementById('order-id').value;
+            const newSpoolId = document.getElementById('order-spool').value;
+            const newGrams = Number(document.getElementById('order-grams').value) || 0;
+            const newStatus = document.getElementById('order-status').value;
+            const targetDeducted = shouldDeductForStatus(newStatus) ? newGrams : 0;
+
+            const orderPayload = {
+                id: id || 'ord-' + Date.now(),
+                customer: document.getElementById('order-customer').value.trim(),
+                channel: document.getElementById('order-channel').value,
+                productName: document.getElementById('order-product').value.trim(),
+                quantity: Number(document.getElementById('order-qty').value) || 1,
+                spoolId: newSpoolId,
+                filamentGrams: newGrams,
+                printHours: Number(document.getElementById('order-print-hours').value) || 0,
+                printMinutes: Number(document.getElementById('order-print-minutes').value) || 0,
+                hourlyPrintRate: Number(document.getElementById('order-hourly-rate').value) || 0,
+                materialCostPerKg: Number(document.getElementById('order-material-cost-kg').value) || 0,
+                status: newStatus,
+                deductedGrams: targetDeducted,
+                extraCost: Number(document.getElementById('order-extra-cost').value) || 0,
+                price: Number(document.getElementById('order-price').value) || 0,
+                orderDate: document.getElementById('order-date').value,
+                dueDate: document.getElementById('order-due-date').value,
+                notes: document.getElementById('order-notes').value.trim()
+            };
+
+            if (id) {
+                const idx = appState.orders.findIndex(o => o.id === id);
+                if (idx !== -1) {
+                    const oldOrder = appState.orders[idx];
+                    if (oldOrder.deductedGrams > 0) {
+                        const oldSpool = appState.spools.find(s => s.id === oldOrder.spoolId);
+                        if (oldSpool) oldSpool.remainingGrams += oldOrder.deductedGrams;
+                    }
+                    if (targetDeducted > 0) {
+                        const newSpool = appState.spools.find(s => s.id === newSpoolId);
+                        if (newSpool) newSpool.remainingGrams = Math.max(0, newSpool.remainingGrams - targetDeducted);
+                    }
+                    appState.orders[idx] = orderPayload;
+                }
+            } else {
+                if (targetDeducted > 0) {
+                    const spool = appState.spools.find(s => s.id === newSpoolId);
+                    if (spool) spool.remainingGrams = Math.max(0, spool.remainingGrams - targetDeducted);
+                }
+                appState.orders.push(orderPayload);
+            }
+
+            saveState();
+            closeModal('order-modal');
+            renderOrders();
+            renderDashboard();
+            showToast(targetDeducted > 0 ? `Ordine salvato e ${targetDeducted}g scalati dal magazzino` : 'Ordine salvato');
+        }
+
+        function quickUpdateOrderStatus(orderId, newStatus) {
+            const order = appState.orders.find(o => o.id === orderId);
+            if (!order) return;
+
+            const oldDeducted = order.deductedGrams || 0;
+            const targetDeducted = shouldDeductForStatus(newStatus) ? order.filamentGrams : 0;
+            const diff = targetDeducted - oldDeducted;
+
+            if (diff !== 0) {
+                const spool = appState.spools.find(s => s.id === order.spoolId);
+                if (spool) {
+                    spool.remainingGrams = Math.max(0, spool.remainingGrams - diff);
+                }
+                order.deductedGrams = targetDeducted;
+            }
+
+            order.status = newStatus;
+            saveState();
+            renderOrders();
+            renderDashboard();
+
+            if (diff > 0) showToast(`Stato aggiornato: scalati ${diff}g di filamento`);
+            else if (diff < 0) showToast(`Stato aggiornato: riaccreditati ${Math.abs(diff)}g alla bobina`);
+            else showToast(`Stato ordine: ${newStatus}`);
+        }
+
+        function deleteOrder(orderId) {
+            const idx = appState.orders.findIndex(o => o.id === orderId);
+            if (idx === -1) return;
+            const order = appState.orders[idx];
+            if (order.deductedGrams > 0) {
+                const spool = appState.spools.find(s => s.id === order.spoolId);
+                if (spool) spool.remainingGrams += order.deductedGrams;
+            }
+            appState.orders.splice(idx, 1);
+            saveState();
+            renderOrders();
+            renderDashboard();
+            showToast('Ordine eliminato');
+        }
+
+        // ================= RENDER & LOGICA MAGAZZINO =================
+        function renderInventory() {
+            document.getElementById('spools-count').textContent = appState.spools.length;
+            document.getElementById('catalog-count').textContent = appState.products.length;
+
+            const spoolsGrid = document.getElementById('inventory-spools-view');
+            spoolsGrid.innerHTML = appState.spools.map(s => {
+                const pct = Math.min(100, Math.round((s.remainingGrams / (s.initialGrams || 1000)) * 100));
+                const isLow = s.remainingGrams < 200;
+                const barColor = isLow ? 'bg-rose-500' : pct < 45 ? 'bg-amber-500' : 'bg-emerald-600';
+
+                return `
+                    <div class="bg-white p-4 rounded-2xl border ${isLow ? 'border-rose-300 bg-rose-50/20' : 'border-stone-200/80'} shadow-sm flex flex-col justify-between">
+                        <div>
+                            <div class="flex items-start justify-between gap-2">
+                                <div class="flex items-center gap-2.5">
+                                    <span class="w-6 h-6 rounded-full border border-stone-300 shadow-inner flex-shrink-0" style="background-color:${s.hex}"></span>
+                                    <div>
+                                        <h4 class="font-semibold text-stone-900 text-sm leading-tight">${escapeHtml(s.name)}</h4>
+                                        <p class="text-[11px] text-stone-500">${escapeHtml(s.material)}</p>
+                                    </div>
+                                </div>
+                                <div class="flex gap-1">
+                                    <button onclick="openSpoolModal('${s.id}')" class="p-1 text-stone-400 hover:text-stone-800 rounded" title="Modifica">✏️</button>
+                                    <button onclick="deleteSpool('${s.id}')" class="p-1 text-stone-400 hover:text-rose-600 rounded" title="Elimina">🗑️</button>
+                                </div>
+                            </div>
+
+                            <div class="mt-4">
+                                <div class="flex justify-between text-xs mb-1">
+                                    <span class="font-medium ${isLow ? 'text-rose-700 font-bold' : 'text-stone-700'}">${s.remainingGrams}g residui</span>
+                                    <span class="text-stone-400">${pct}%</span>
+                                </div>
+                                <div class="w-full h-2 bg-stone-100 rounded-full overflow-hidden">
+                                    <div class="h-full ${barColor} rounded-full transition-all duration-300" style="width:${pct}%"></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mt-4 pt-3 border-t border-stone-100 flex items-center justify-between">
+                            <span class="text-[11px] text-stone-400">${formatCurrency(s.costPerKg)}/kg</span>
+                            <button onclick="restockSpool('${s.id}')" class="px-2.5 py-1 rounded-lg bg-stone-100 hover:bg-stone-200 text-[11px] font-medium text-stone-700 transition-colors">
+                                + Nuova Bobina (1kg)
+                            </button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            const catalogGrid = document.getElementById('inventory-catalog-view');
+            catalogGrid.innerHTML = appState.products.map(p => {
+                const spoolExample = appState.spools[0] || { costPerKg: 22 };
+                const estMatCost = (p.estimatedGrams / 1000) * spoolExample.costPerKg;
+                const estMins = ((Number(p.printHours) || 0) * 60) + (Number(p.printMinutes) || 0);
+                const estPrintCost = (estMins / 60) * (Number(appState.settings?.hourlyPrintRate) || 1.2);
+                const estProfit = p.basePrice - estMatCost - estPrintCost - (p.extraCost || 0);
+
+                return `
+                    <div class="bg-white p-5 rounded-2xl border border-stone-200/80 shadow-sm flex flex-col justify-between">
+                        <div>
+                            <div class="flex items-start justify-between">
+                                <span class="px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-novelia-100 text-novelia-800">${escapeHtml(p.category || 'Modello 3D')}</span>
+                                <div class="flex gap-1">
+                                    <button onclick="openProductModal('${p.id}')" class="p-1 text-stone-400 hover:text-stone-800">✏️</button>
+                                    <button onclick="deleteProduct('${p.id}')" class="p-1 text-stone-400 hover:text-rose-600">🗑️</button>
+                                </div>
+                            </div>
+                            <h4 class="font-semibold text-stone-900 text-base mt-2">${escapeHtml(p.name)}</h4>
+                            <div class="mt-3 grid grid-cols-2 gap-2 text-xs text-stone-600 bg-stone-50 p-3 rounded-xl">
+                                <div>Peso Slicer: <strong>${p.estimatedGrams}g</strong></div>
+                                <div>Stampa: <strong>${p.printHours || 0}h ${p.printMinutes || 0}m</strong></div>
+                                <div>Costi Extra: <strong>${formatCurrency(p.extraCost)}</strong></div>
+                                <div>Listino: <strong>${formatCurrency(p.basePrice)}</strong></div>
+                            </div>
+                        </div>
+                        <div class="mt-4 pt-3 border-t border-stone-100 flex items-center justify-between text-xs">
+                            <span class="text-stone-500">Margine stimato: <strong class="text-emerald-700">${formatCurrency(estProfit)}</strong></span>
+                            <button onclick="createOrderFromProduct('${p.id}')" class="text-novelia-700 font-semibold hover:underline">+ Ordina</button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function openSpoolModal(spoolId = null) {
+            const modal = document.getElementById('spool-modal');
+            if (spoolId) {
+                const s = appState.spools.find(item => item.id === spoolId);
+                if (!s) return;
+                document.getElementById('spool-modal-title').textContent = 'Modifica Bobina';
+                document.getElementById('spool-id').value = s.id;
+                document.getElementById('spool-name').value = s.name;
+                document.getElementById('spool-material').value = s.material;
+                document.getElementById('spool-hex').value = s.hex;
+                document.getElementById('spool-initial').value = s.initialGrams;
+                document.getElementById('spool-remaining').value = s.remainingGrams;
+                document.getElementById('spool-cost').value = s.costPerKg;
+            } else {
+                document.getElementById('spool-modal-title').textContent = 'Nuova Bobina';
+                document.getElementById('spool-form').reset();
+                document.getElementById('spool-id').value = '';
+                document.getElementById('spool-initial').value = 1000;
+                document.getElementById('spool-remaining').value = 1000;
+                document.getElementById('spool-cost').value = 22.00;
+            }
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+        }
+
+        function saveSpool(e) {
+            e.preventDefault();
+            const id = document.getElementById('spool-id').value;
+            const payload = {
+                id: id || 'sp-' + Date.now(),
+                name: document.getElementById('spool-name').value.trim(),
+                material: document.getElementById('spool-material').value.trim(),
+                hex: document.getElementById('spool-hex').value,
+                initialGrams: Number(document.getElementById('spool-initial').value) || 1000,
+                remainingGrams: Number(document.getElementById('spool-remaining').value) || 0,
+                costPerKg: Number(document.getElementById('spool-cost').value) || 22
+            };
+
+            if (id) {
+                const idx = appState.spools.findIndex(s => s.id === id);
+                if (idx !== -1) appState.spools[idx] = payload;
+            } else {
+                appState.spools.push(payload);
+            }
+            saveState();
+            closeModal('spool-modal');
+            renderInventory();
+            renderDashboard();
+            showToast('Bobina salvata in magazzino');
+        }
+
+        function restockSpool(spoolId) {
+            const spool = appState.spools.find(s => s.id === spoolId);
+            if (!spool) return;
+            spool.remainingGrams += 1000;
+            spool.initialGrams = Math.max(spool.initialGrams, spool.remainingGrams);
+            appState.expenses.push({
+                id: 'exp-' + Date.now(),
+                category: 'Acquisto Bobine Filamento',
+                description: `Ricarica bobina 1kg: ${spool.name} (${spool.material})`,
+                amount: Number(spool.costPerKg) || 22,
+                date: new Date().toISOString().slice(0, 10)
+            });
+            saveState();
+            renderInventory();
+            renderDashboard();
+            showToast(`+1000g aggiunti a ${spool.name} e spesa registrata`);
+        }
+
+        function deleteSpool(spoolId) {
+            appState.spools = appState.spools.filter(s => s.id !== spoolId);
+            saveState();
+            renderInventory();
+            renderDashboard();
+            showToast('Bobina rimossa');
+        }
+
+        function openProductModal(productId = null) {
+            const modal = document.getElementById('product-modal');
+            if (productId) {
+                const p = appState.products.find(item => item.id === productId);
+                if (!p) return;
+                document.getElementById('product-modal-title').textContent = 'Modifica Modello';
+                document.getElementById('product-id').value = p.id;
+                document.getElementById('product-name').value = p.name;
+                document.getElementById('product-category').value = p.category;
+                document.getElementById('product-grams').value = p.estimatedGrams;
+                document.getElementById('product-hours').value = p.printHours || 0;
+                document.getElementById('product-minutes').value = p.printMinutes || 0;
+                document.getElementById('product-extra').value = p.extraCost || 0;
+                document.getElementById('product-price').value = p.basePrice;
+            } else {
+                document.getElementById('product-modal-title').textContent = 'Nuovo Modello Catalogo';
+                document.getElementById('product-form').reset();
+                document.getElementById('product-id').value = '';
+                document.getElementById('product-hours').value = 3;
+                document.getElementById('product-minutes').value = 0;
+            }
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+        }
+
+        function saveProduct(e) {
+            e.preventDefault();
+            const id = document.getElementById('product-id').value;
+            const payload = {
+                id: id || 'pr-' + Date.now(),
+                name: document.getElementById('product-name').value.trim(),
+                category: document.getElementById('product-category').value.trim() || 'Modello 3D',
+                estimatedGrams: Number(document.getElementById('product-grams').value) || 0,
+                printHours: Number(document.getElementById('product-hours').value) || 0,
+                printMinutes: Number(document.getElementById('product-minutes').value) || 0,
+                extraCost: Number(document.getElementById('product-extra').value) || 0,
+                basePrice: Number(document.getElementById('product-price').value) || 0
+            };
+
+            if (id) {
+                const idx = appState.products.findIndex(p => p.id === id);
+                if (idx !== -1) appState.products[idx] = payload;
+            } else {
+                appState.products.push(payload);
+            }
+            saveState();
+            closeModal('product-modal');
+            renderInventory();
+            showToast('Modello salvato nel catalogo');
+        }
+
+        function deleteProduct(productId) {
+            appState.products = appState.products.filter(p => p.id !== productId);
+            saveState();
+            renderInventory();
+            showToast('Modello eliminato');
+        }
+
+        function createOrderFromProduct(productId) {
+            openOrderModal();
+            document.getElementById('order-catalog-preset').value = productId;
+            applyCatalogPreset();
+        }
+
+        // ================= RENDER & LOGICA FINANZE =================
+        function saveCostSettings() {
+            const hourly = parseFloat(document.getElementById('setting-hourly-rate').value);
+            const matKg = parseFloat(document.getElementById('setting-material-kg').value);
+            appState.settings = {
+                hourlyPrintRate: isNaN(hourly) ? 1.20 : Math.max(0, hourly),
+                defaultMaterialCostPerKg: isNaN(matKg) ? 22.00 : Math.max(0, matKg)
+            };
+            saveState();
+            renderOrders();
+            renderFinance();
+            showToast('Parametri di costo aggiornati');
+        }
+
+        function resetFinanceMonthFilter() {
+            const el = document.getElementById('fin-month-filter');
+            if (el) el.value = '';
+            renderFinance();
+        }
+
+        function renderFinance() {
+            const hourlyInput = document.getElementById('setting-hourly-rate');
+            const matKgInput = document.getElementById('setting-material-kg');
+            if (hourlyInput && matKgInput) {
+                hourlyInput.value = Number(appState.settings?.hourlyPrintRate ?? 1.20).toFixed(2);
+                matKgInput.value = Number(appState.settings?.defaultMaterialCostPerKg ?? 22.00).toFixed(2);
+            }
+
+            const monthFilter = document.getElementById('fin-month-filter')?.value || '';
+            const typeFilter = document.getElementById('fin-type-filter')?.value || 'ALL';
+
+            const filteredOrders = appState.orders.filter(o => !monthFilter || (o.orderDate || '').startsWith(monthFilter));
+            const paidOrders = filteredOrders.filter(o => o.status === 'Pagato');
+            const filteredExpenses = appState.expenses.filter(e => !monthFilter || (e.date || '').startsWith(monthFilter));
+
+            // 1. Profitto Ordini: Totale di tutti gli ordini (pagati e non) meno costi diretti di produzione
+            const allOrdersRevenue = filteredOrders.reduce((sum, o) => sum + (Number(o.price) || 0), 0);
+            const allOrdersProdCosts = filteredOrders.reduce((sum, o) => sum + calculateOrderEconomics(o).totalCost, 0);
+            const ordersProfit = allOrdersRevenue - allOrdersProdCosts;
+
+            // 2. Totale in Cassa: Solo ordini pagati meno i loro costi diretti di produzione (escluse uscite extra)
+            const paidRevenue = paidOrders.reduce((sum, o) => sum + (Number(o.price) || 0), 0);
+            const paidProdCosts = paidOrders.reduce((sum, o) => sum + calculateOrderEconomics(o).totalCost, 0);
+            const cashTotal = paidRevenue - paidProdCosts;
+
+            document.getElementById('fin-income').textContent = formatCurrency(allOrdersRevenue);
+            document.getElementById('fin-prod-costs').textContent = formatCurrency(allOrdersProdCosts);
+
+            const netEl = document.getElementById('fin-net');
+            netEl.textContent = formatCurrency(ordersProfit);
+            netEl.className = `text-2xl font-bold mt-2 ${ordersProfit >= 0 ? 'text-emerald-700' : 'text-rose-700'}`;
+
+            const cashEl = document.getElementById('fin-cash');
+            cashEl.textContent = formatCurrency(cashTotal);
+            cashEl.className = `text-2xl font-bold mt-2 ${cashTotal >= 0 ? 'text-indigo-900' : 'text-rose-700'}`;
+
+            // Tabella Analisi Profitti per Ordine (tutti gli ordini del periodo, pagati e non)
+            const profitBody = document.getElementById('finance-orders-profit-body');
+            const profitFoot = document.getElementById('finance-orders-profit-foot');
+            if (profitBody && profitFoot) {
+                const sortedOrders = [...filteredOrders].sort((a, b) => (b.orderDate || '').localeCompare(a.orderDate || ''));
+                if (sortedOrders.length === 0) {
+                    profitBody.innerHTML = `<tr><td colspan="9" class="py-6 text-center text-stone-400">Nessun ordine nel periodo selezionato.</td></tr>`;
+                    profitFoot.innerHTML = '';
+                } else {
+                    let totMins = 0, totGrams = 0, totPrice = 0, totMat = 0, totPrint = 0, totExtra = 0, totProfit = 0;
+                    profitBody.innerHTML = sortedOrders.map(o => {
+                        const eco = calculateOrderEconomics(o);
+                        totMins += eco.totalMinutes;
+                        totGrams += Number(o.filamentGrams) || 0;
+                        totPrice += eco.price;
+                        totMat += eco.materialCost;
+                        totPrint += eco.printCost;
+                        totExtra += eco.extraCost;
+                        totProfit += eco.profit;
+                        const isPaid = o.status === 'Pagato';
+                        return `
+                            <tr class="hover:bg-stone-50/70">
+                                <td class="py-2.5 px-4 text-xs text-stone-600">${o.orderDate || '-'}</td>
+                                <td class="py-2.5 px-4">
+                                    <div class="font-medium text-stone-900 text-xs">${escapeHtml(o.customer)}</div>
+                                    <div class="text-[11px] text-stone-500">${escapeHtml(o.productName)} (x${o.quantity || 1})</div>
+                                </td>
+                                <td class="py-2.5 px-4">
+                                    <span class="px-2 py-0.5 rounded-full text-[10px] font-medium ${isPaid ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'}">
+                                        ${escapeHtml(o.status || 'Da stampare')}
+                                    </span>
+                                </td>
+                                <td class="py-2.5 px-4 text-right text-xs text-stone-600">${formatDuration(eco.totalMinutes)} / ${o.filamentGrams || 0}g</td>
+                                <td class="py-2.5 px-4 text-right text-xs font-semibold text-stone-900">${formatCurrency(eco.price)}</td>
+                                <td class="py-2.5 px-4 text-right text-xs text-stone-600">${formatCurrency(eco.materialCost)}</td>
+                                <td class="py-2.5 px-4 text-right text-xs text-stone-600">${formatCurrency(eco.printCost)}</td>
+                                <td class="py-2.5 px-4 text-right text-xs text-stone-600">${formatCurrency(eco.extraCost)}</td>
+                                <td class="py-2.5 px-4 text-right text-xs font-bold ${eco.profit >= 0 ? 'text-emerald-700' : 'text-rose-600'}">
+                                    ${formatCurrency(eco.profit)} <span class="text-[10px] font-normal">(${eco.marginPct.toFixed(0)}%)</span>
+                                </td>
+                            </tr>
+                        `;
+                    }).join('');
+
+                    const overallMargin = totPrice > 0 ? (totProfit / totPrice) * 100 : 0;
+                    profitFoot.innerHTML = `
+                        <tr>
+                            <td colspan="3" class="py-3 px-4 text-xs uppercase tracking-wider text-stone-600">Totale Periodo (${sortedOrders.length} ordini)</td>
+                            <td class="py-3 px-4 text-right text-xs text-stone-700">${formatDuration(totMins)} / ${totGrams}g</td>
+                            <td class="py-3 px-4 text-right text-xs text-stone-900">${formatCurrency(totPrice)}</td>
+                            <td class="py-3 px-4 text-right text-xs text-stone-700">${formatCurrency(totMat)}</td>
+                            <td class="py-3 px-4 text-right text-xs text-stone-700">${formatCurrency(totPrint)}</td>
+                            <td class="py-3 px-4 text-right text-xs text-stone-700">${formatCurrency(totExtra)}</td>
+                            <td class="py-3 px-4 text-right text-xs ${totProfit >= 0 ? 'text-emerald-700' : 'text-rose-700'}">
+                                ${formatCurrency(totProfit)} (${overallMargin.toFixed(0)}%)
+                            </td>
+                        </tr>
+                    `;
+                }
+            }
+
+            // Registro Movimenti (Entrate da ordini pagati + Promemoria Uscite)
+            const movements = [];
+            if (typeFilter === 'ALL' || typeFilter === 'INCOME') {
+                paidOrders.forEach(o => {
+                    const eco = calculateOrderEconomics(o);
+                    movements.push({
+                        id: o.id,
+                        date: o.orderDate,
+                        type: 'INCOME',
+                        category: 'Vendita Prodotto (Pagato)',
+                        description: `${o.customer} — ${o.productName} (Netto cassa: ${formatCurrency(eco.profit)})`,
+                        amount: Number(o.price) || 0,
+                        isOrder: true
+                    });
+                });
+            }
+            if (typeFilter === 'ALL' || typeFilter === 'EXPENSE') {
+                filteredExpenses.forEach(e => {
+                    movements.push({
+                        id: e.id,
+                        date: e.date,
+                        type: 'EXPENSE',
+                        category: e.category,
+                        description: e.description,
+                        amount: Number(e.amount) || 0,
+                        isOrder: false
+                    });
+                });
+            }
+
+            movements.sort((a, b) => (b.date || '').localeCompare(a.date || ''));
+
+            const tbody = document.getElementById('finance-table-body');
+            if (movements.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="6" class="py-8 text-center text-stone-400">Nessun movimento nel periodo selezionato.</td></tr>`;
+                return;
+            }
+
+            tbody.innerHTML = movements.map(m => `
+                <tr class="hover:bg-stone-50/70 transition-colors">
+                    <td class="py-3 px-4 text-xs text-stone-600">${m.date || '-'}</td>
+                    <td class="py-3 px-4">
+                        <span class="px-2.5 py-1 rounded-full text-[11px] font-medium ${m.type === 'INCOME' ? 'bg-emerald-100 text-emerald-800' : 'bg-stone-100 text-stone-600'}">
+                            ${m.type === 'INCOME' ? 'Entrata' : 'Promemoria Uscita'}
+                        </span>
+                    </td>
+                    <td class="py-3 px-4 text-xs font-medium text-stone-700">${escapeHtml(m.category)}</td>
+                    <td class="py-3 px-4 text-xs text-stone-600">${escapeHtml(m.description)}</td>
+                    <td class="py-3 px-4 text-right font-semibold ${m.type === 'INCOME' ? 'text-emerald-700' : 'text-stone-500'}">
+                        ${m.type === 'INCOME' ? '+' : ''}${formatCurrency(m.amount)}
+                    </td>
+                    <td class="py-3 px-4 text-right">
+                        ${m.isOrder ? '<span class="text-[11px] text-stone-400">Da Ordine</span>' : `<button onclick="deleteExpense('${m.id}')" class="p-1.5 text-stone-400 hover:text-rose-600 rounded-lg" title="Elimina promemoria">🗑️</button>`}
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        function openExpenseModal() {
+            const modal = document.getElementById('expense-modal');
+            document.getElementById('expense-form').reset();
+            document.getElementById('expense-date').value = new Date().toISOString().slice(0, 10);
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+        }
+
+        function saveExpense(e) {
+            e.preventDefault();
+            appState.expenses.push({
+                id: 'exp-' + Date.now(),
+                category: document.getElementById('expense-category').value,
+                description: document.getElementById('expense-desc').value.trim(),
+                amount: Number(document.getElementById('expense-amount').value) || 0,
+                date: document.getElementById('expense-date').value
+            });
+            saveState();
+            closeModal('expense-modal');
+            renderFinance();
+            renderDashboard();
+            showToast('Promemoria uscita registrato');
+        }
+
+        function deleteExpense(expenseId) {
+            appState.expenses = appState.expenses.filter(e => e.id !== expenseId);
+            saveState();
+            renderFinance();
+            renderDashboard();
+            showToast('Promemoria uscita rimosso');
+        }
+
+        // ================= BACKUP & ESPORTAZIONE =================
+        function exportDataJSON() {
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(appState, null, 2));
+            const a = document.createElement('a');
+            a.setAttribute("href", dataStr);
+            a.setAttribute("download", `novelia_studio_backup_${new Date().toISOString().slice(0, 10)}.json`);
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+            showToast('Backup JSON scaricato');
+        }
+
+        function importDataJSON(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const imported = JSON.parse(e.target.result);
+                    if (imported && Array.isArray(imported.spools) && Array.isArray(imported.orders)) {
+                        appState = {
+                            pin: imported.pin || appState.pin || '2026',
+                            settings: imported.settings || { hourlyPrintRate: 1.20, defaultMaterialCostPerKg: 22.00 },
+                            spools: imported.spools,
+                            products: imported.products || [],
+                            orders: imported.orders,
+                            expenses: imported.expenses || []
+                        };
+                        saveState();
+                        renderDashboard();
+                        renderOrders();
+                        renderInventory();
+                        renderFinance();
+                        showToast('Dati ripristinati con successo!');
+                    } else {
+                        showToast('File JSON non valido', 'error');
+                    }
+                } catch (err) {
+                    showToast('Errore lettura file JSON', 'error');
+                }
+            };
+            reader.readAsText(file);
+            event.target.value = '';
+        }
+
+        function exportOrdersCSV() {
+            const headers = ['ID', 'Data Ordine', 'Consegna', 'Cliente', 'Canale', 'Prodotto', 'Quantita', 'Colore', 'Tempo Stampa', 'Grammi', 'Costo Materiale', 'Costo Stampa', 'Costi Extra', 'Prezzo Cliente', 'Profitto Netto', 'Stato'];
+            const rows = appState.orders.map(o => {
+                const spool = appState.spools.find(s => s.id === o.spoolId);
+                const eco = calculateOrderEconomics(o);
+                return [
+                    o.id, o.orderDate, o.dueDate,
+                    `"${(o.customer || '').replace(/"/g, '""')}"`,
+                    o.channel,
+                    `"${(o.productName || '').replace(/"/g, '""')}"`,
+                    o.quantity,
+                    spool ? spool.name : '',
+                    `"${formatDuration(eco.totalMinutes)}"`,
+                    o.filamentGrams,
+                    eco.materialCost.toFixed(2),
+                    eco.printCost.toFixed(2),
+                    eco.extraCost.toFixed(2),
+                    eco.price.toFixed(2),
+                    eco.profit.toFixed(2),
+                    o.status
+                ].join(',');
+            });
+            const csvContent = "data:text/csv;charset=utf-8," + [headers.join(','), ...rows].join('\n');
+            const a = document.createElement('a');
+            a.setAttribute("href", encodeURI(csvContent));
+            a.setAttribute("download", `novelia_ordini_${new Date().toISOString().slice(0, 10)}.csv`);
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+            showToast('Esportazione CSV completata');
+        }
+
+        // Funzione globale chiamata dalla sincronizzazione cloud quando arrivano aggiornamenti remoti
+        window.applyRemoteState = function(remoteData) {
+            if (!remoteData) return;
+            appState = {
+                pin: remoteData.pin || appState.pin || '2026',
+                settings: remoteData.settings || appState.settings,
+                spools: Array.isArray(remoteData.spools) ? remoteData.spools : appState.spools,
+                products: Array.isArray(remoteData.products) ? remoteData.products : appState.products,
+                orders: Array.isArray(remoteData.orders) ? remoteData.orders : appState.orders,
+                expenses: Array.isArray(remoteData.expenses) ? remoteData.expenses : appState.expenses
+            };
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(appState));
+            renderDashboard();
+            renderOrders();
+            renderInventory();
+            renderFinance();
+        };
+
+        // Inizializzazione al caricamento
+        window.onload = function() {
+            const currentMonthStr = new Date().toISOString().slice(0, 7);
+            const orderMonthEl = document.getElementById('order-month-filter');
+            const finMonthEl = document.getElementById('fin-month-filter');
+            if (orderMonthEl) orderMonthEl.value = currentMonthStr;
+            if (finMonthEl) finMonthEl.value = currentMonthStr;
+            checkAuthSession();
+            renderDashboard();
+        };
+    </script>
+
+    <!-- ================= SINCRONIZZAZIONE CLOUD (SUPABASE REALTIME) ================= -->
+    <script type="module">
+        import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm";
+
+        const SB_URL_KEY = 'novelia_supabase_url';
+        const SB_ANON_KEY = 'novelia_supabase_anon_key';
+        const DOC_ID = 'novelia_studio_main';
+
+        let supabase = null;
+        let realtimeChannel = null;
+        let isApplyingRemote = false;
+
+        function setCloudStatus(connected, label) {
+            const authBadge = document.getElementById('auth-cloud-badge');
+            const sideDot = document.getElementById('sidebar-sync-dot');
+            const sideText = document.getElementById('sidebar-sync-text');
+
+            if (authBadge) {
+                authBadge.innerHTML = connected
+                    ? `<span class="w-2 h-2 rounded-full bg-emerald-500"></span> ${label}`
+                    : `<span class="w-2 h-2 rounded-full bg-amber-400"></span> ${label}`;
+            }
+            if (sideDot) {
+                sideDot.className = `w-2 h-2 rounded-full flex-shrink-0 ${connected ? 'bg-emerald-500' : 'bg-amber-400'}`;
+            }
+            if (sideText) {
+                sideText.textContent = label;
+            }
+        }
+
+        function getSupabaseCredentials() {
+            const url = (typeof HARDCODED_SUPABASE_URL !== 'undefined' && HARDCODED_SUPABASE_URL)
+                || localStorage.getItem(SB_URL_KEY) || '';
+            const key = (typeof HARDCODED_SUPABASE_KEY !== 'undefined' && HARDCODED_SUPABASE_KEY)
+                || localStorage.getItem(SB_ANON_KEY) || '';
+            return { url, key };
+        }
+
+        window.openCloudConfigModal = function() {
+            const { url, key } = getSupabaseCredentials();
+            document.getElementById('sb-url-input').value = url;
+            document.getElementById('sb-key-input').value = key;
+            const modal = document.getElementById('cloud-modal');
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+        };
+
+        window.saveSupabaseConfig = async function(e) {
+            e.preventDefault();
+            const url = document.getElementById('sb-url-input').value.trim();
+            const key = document.getElementById('sb-key-input').value.trim();
+            localStorage.setItem(SB_URL_KEY, url);
+            localStorage.setItem(SB_ANON_KEY, key);
+            closeModal('cloud-modal');
+            await initSupabaseSync();
+        };
+
+        window.disconnectSupabase = function() {
+            localStorage.removeItem(SB_URL_KEY);
+            localStorage.removeItem(SB_ANON_KEY);
+            if (realtimeChannel && supabase) {
+                supabase.removeChannel(realtimeChannel);
+            }
+            supabase = null;
+            setCloudStatus(false, 'Solo Locale');
+            closeModal('cloud-modal');
+            showToast('Database cloud scollegato');
+        };
+
+        async function initSupabaseSync() {
+            const { url, key } = getSupabaseCredentials();
+            if (!url || !key) {
+                setCloudStatus(false, 'Solo Locale');
+                return;
+            }
+
+            try {
+                if (realtimeChannel && supabase) {
+                    supabase.removeChannel(realtimeChannel);
+                }
+
+                supabase = createClient(url, key);
+                setCloudStatus(false, 'Connessione...');
+
+                // Carica stato iniziale dal database Supabase
+                const { data, error } = await supabase
+                    .from('novelia_state')
+                    .select('payload')
+                    .eq('id', DOC_ID)
+                    .maybeSingle();
+
+                if (error) {
+                    console.error('Errore lettura Supabase:', error);
+                    setCloudStatus(false, 'Errore Tabella');
+                    showToast('Verifica di aver creato la tabella novelia_state su Supabase', 'error');
+                    return;
+                }
+
+                if (data && data.payload) {
+                    isApplyingRemote = true;
+                    if (typeof window.applyRemoteState === 'function') {
+                        window.applyRemoteState(data.payload);
+                    }
+                    isApplyingRemote = false;
+                } else if (typeof window.getAppState === 'function') {
+                    // Primo avvio: carica i dati locali su Supabase
+                    await supabase.from('novelia_state').upsert({
+                        id: DOC_ID,
+                        payload: window.getAppState(),
+                        updated_at: new Date().toISOString()
+                    });
+                }
+
+                // Ascolta modifiche in tempo reale dagli altri dispositivi
+                realtimeChannel = supabase
+                    .channel('novelia-realtime-sync')
+                    .on(
+                        'postgres_changes',
+                        { event: '*', schema: 'public', table: 'novelia_state', filter: `id=eq.${DOC_ID}` },
+                        (payloadEvent) => {
+                            if (payloadEvent.new && payloadEvent.new.payload) {
+                                isApplyingRemote = true;
+                                if (typeof window.applyRemoteState === 'function') {
+                                    window.applyRemoteState(payloadEvent.new.payload);
+                                }
+                                isApplyingRemote = false;
+                            }
+                        }
+                    )
+                    .subscribe();
+
+                setCloudStatus(true, 'Cloud Attivo');
+                showToast('Sincronizzazione Supabase attiva!');
+
+                window.syncStateToCloud = async function(stateObj) {
+                    if (isApplyingRemote || !supabase) return;
+                    try {
+                        await supabase.from('novelia_state').upsert({
+                            id: DOC_ID,
+                            payload: stateObj,
+                            updated_at: new Date().toISOString()
+                        });
+                    } catch (err) {
+                        console.error('Errore salvataggio Supabase:', err);
+                    }
+                };
+            } catch (err) {
+                console.error('Errore inizializzazione Supabase:', err);
+                setCloudStatus(false, 'Solo Locale');
+            }
+        }
+
+        initSupabaseSync();
+    </script>
+</body>
+</html>
